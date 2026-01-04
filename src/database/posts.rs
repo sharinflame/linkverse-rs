@@ -23,11 +23,7 @@ pub static POST_SQL: &str = "
     LEFT JOIN tags t ON t.tag_id = pt.tag_id
     LEFT JOIN files m ON m.context_id = p.file_context_id
 
-    WHERE (
-        ($1 AND p.post_id = $2)
-        OR
-        (NOT $1 AND p.user_id = $2)
-    ) AND ($3::bool OR p.is_deleted = false)
+    WHERE p.post_id = $1 AND ($2::bool OR p.is_deleted = false)
 
     GROUP BY p.post_id, m.objects, m.type
 ";
@@ -53,28 +49,17 @@ fn row_to_post(row: Row, state: &ArcAppState) -> Post {
     }
 }
 
-pub enum PostLookup<'a> {
-    ByPostId(&'a str),
-    ByUserId(&'a str),
-}
-
 /// Get single post by id from database
 /// Returns: Post entity without 'is_deleted' and 'status' fields
 pub async fn get_post(
-    lookup: PostLookup<'_>,
+    post_id: &String,
     conn: &mut LazyConn,
     state: &ArcAppState,
     include_deleted: bool,
 ) -> Option<Post> {
     let db = conn.get_client().await.unwrap();
-
-    let (is_post, id) = match lookup {
-        PostLookup::ByPostId(id) => (true, id),
-        PostLookup::ByUserId(id) => (false, id),
-    };
-
     let row = db
-        .query_opt(POST_SQL, &[&is_post, &id, &include_deleted])
+        .query_opt(POST_SQL, &[&post_id, &include_deleted])
         .await
         .unwrap();
     row.map(|r| row_to_post(r, state))
