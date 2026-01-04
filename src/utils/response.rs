@@ -78,20 +78,22 @@ pub enum FuncError {
     Unauthorized,
     ExpiredToken,
     InvalidToken,
+    PostDoesNotExist,
 }
 
 impl From<FuncError> for AppError {
     fn from(err: FuncError) -> Self {
         match err {
-            FuncError::UserNotFound => AppError::NotFound("USER_NOT_FOUND".into()),
-            FuncError::IncorrectPassword => AppError::Unauthorized("INCORRECT_PASSWORD".into()),
-            FuncError::IncorrectData => AppError::BadRequest("INCORRECT_DATA".into()),
-            FuncError::UserAlreadyExists => AppError::Conflict("USER_ALREADY_EXISTS".into()),
-            FuncError::UsernameExists => AppError::Conflict("USERNAME_EXISTS".into()),
-            FuncError::InternalServerError => AppError::Internal("INTERNAL_SERVER_ERROR".into()),
-            FuncError::Unauthorized => AppError::Unauthorized("UNAUTHORIZED".into()),
-            FuncError::ExpiredToken => AppError::Unauthorized("EXPIRED_TOKEN".into()),
-            FuncError::InvalidToken => AppError::Unauthorized("INVALID_TOKEN".into()),
+            FuncError::UserNotFound => AppError::NotFound("USER_NOT_FOUND"),
+            FuncError::IncorrectPassword => AppError::Unauthorized("INCORRECT_PASSWORD"),
+            FuncError::IncorrectData => AppError::BadRequest("INCORRECT_DATA"),
+            FuncError::UserAlreadyExists => AppError::Conflict("USER_ALREADY_EXISTS"),
+            FuncError::UsernameExists => AppError::Conflict("USERNAME_EXISTS"),
+            FuncError::InternalServerError => AppError::Internal("INTERNAL_SERVER_ERROR"),
+            FuncError::Unauthorized => AppError::Unauthorized("UNAUTHORIZED"),
+            FuncError::ExpiredToken => AppError::Unauthorized("EXPIRED_TOKEN"),
+            FuncError::InvalidToken => AppError::Unauthorized("INVALID_TOKEN"),
+            FuncError::PostDoesNotExist => AppError::NotFound("POST_DOES_NOT_EXIST"),
         }
     }
 }

@@ -21,6 +21,7 @@ mod entities;
 mod extractors;
 mod services;
 mod utils;
+mod views;
 
 fn panic_handler(err: Box<dyn any::Any + Send + 'static>) -> Response<Body> {
     let msg = if let Some(s) = err.downcast_ref::<&str>() {
