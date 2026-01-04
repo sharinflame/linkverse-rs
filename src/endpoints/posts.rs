@@ -51,7 +51,7 @@ mod create_post {
 
     fn validate_flags_or_tags(langs: &Vec<String>) -> Result<(), ValidationError> {
         if langs.len() > 4 {
-            return Err(ValidationError::new("too_many_languages"));
+            return Err(ValidationError::new("too_many_values"));
         }
         for lang in langs {
             if lang.len() > 22 {
