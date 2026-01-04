@@ -7,3 +7,4 @@ pub mod state;
 pub mod storage;
 pub mod thread_state;
 pub mod validate;
+pub mod format;
