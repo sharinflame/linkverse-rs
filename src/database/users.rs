@@ -25,7 +25,13 @@ pub async fn get_min_user(user_id: &String, conn: &mut LazyConn) -> Option<User>
     let db = conn.get_client().await.unwrap();
     let sql = "
         SELECT u.user_id, u.username, p.display_name, u.role_id,
-               ac.objects[1] as avatar_url
+               ac.objects[1] as avatar_url,
+               NULL::text as banner_url,
+               NULL::text as bio,
+               NULL::smallint[] as badges,
+               NULL::text[] as languages,
+               NULL::bigint as following_count,
+               NULL::bigint as followers_count
         FROM users u
         LEFT JOIN user_profiles p ON u.user_id = p.user_id
         LEFT JOIN files ac ON ac.context_id = p.avatar_context_id
