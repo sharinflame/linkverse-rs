@@ -1,23 +1,29 @@
+use std::collections::HashSet;
+
+use deadpool_postgres::Transaction;
 use tokio_postgres::Row;
 
 use crate::{
     database::conn::LazyConn,
     entities::post::Post,
-    utils::{state::ArcAppState, storage::build_links},
+    utils::{
+        format::normalize_tag, state::ArcAppState, storage::build_links, thread_state::generate_id,
+    },
 };
 
 pub static POST_SQL: &str = "
     SELECT p.post_id, p.user_id, p.content,
-           EXTRACT(EPOCH FROM p.created_at),
-           EXTRACT(EPOCH FROM p.updated_at),
+           EXTRACT(EPOCH FROM p.created_at)::bigint as created_at,
+           EXTRACT(EPOCH FROM p.updated_at)::bigint as updated_at,
            p.likes_count, p.comments_count,
-           p.dislikes_count, p.tags, m.objects as media,
-           m.type as media_type
+           p.dislikes_count, p.flags,
+           COALESCE(m.objects, '{}'::text[]) AS media,
+           m.type as media_type,
            COALESCE(
                 array_agg(t.name)
                 FILTER (WHERE t.tag_id IS NOT NULL),
                 '{{}}'
-           ) AS ctags
+           ) AS tags
     FROM posts p
     LEFT JOIN post_tags pt ON pt.post_id = p.post_id
     LEFT JOIN tags t ON t.tag_id = pt.tag_id
@@ -43,8 +49,8 @@ fn row_to_post(row: Row, state: &ArcAppState) -> Post {
         flags: row.get("flags"),
         media: build_links(row.get("media"), state),
         media_type: row.get("media_type"),
-        status: row.get("status"),
-        is_deleted: row.get("is_deleted"),
+        status: row.try_get("status").ok().flatten(),
+        is_deleted: row.try_get("is_deleted").ok().flatten(),
         tags: row.get("tags"),
     }
 }
@@ -63,4 +69,92 @@ pub async fn get_post(
         .await
         .unwrap();
     row.map(|r| row_to_post(r, state))
+}
+
+/// Functions that automatically creates tags and inserts them to post
+/// Tags are normalized and duplicates are deleted before tags are inserted
+/// Doesn't return anything, touches two tables "tags" and "post_tags" in database
+pub async fn insert_tags_and_link_post(
+    post_id: &str,
+    raw_tags: Vec<String>,
+    tx: &mut Transaction<'_>,
+) {
+    let mut seen = HashSet::new();
+    let mut names: Vec<String> = Vec::new();
+
+    for t in raw_tags.into_iter() {
+        let nt = normalize_tag(&t);
+        if nt.is_empty() {
+            continue;
+        }
+        if seen.insert(nt.clone()) {
+            names.push(nt);
+        }
+    }
+    drop(seen); // I'm just paranoid :3
+
+    if names.is_empty() {
+        return;
+    }
+
+    let ids: Vec<String> = (0..names.len())
+        .map(|_| generate_id().to_string())
+        .collect();
+
+    let name_slices: Vec<&str> = names.iter().map(|s| s.as_str()).collect();
+    let id_slices: Vec<&str> = ids.iter().map(|s| s.as_str()).collect();
+
+    tx.execute(
+        "
+        INSERT INTO tags (name, tag_id)
+        SELECT u.name, u.id
+        FROM unnest($1::text[], $2::text[]) AS u(name, id)
+        ON CONFLICT (name) DO NOTHING
+        ",
+        &[&name_slices, &id_slices],
+    )
+    .await
+    .unwrap();
+
+    tx.execute(
+        "
+        INSERT INTO post_tags (post_id, tag_id)
+        SELECT $1::text, t.tag_id
+        FROM tags t
+        WHERE t.name = ANY($2::text[])
+        ON CONFLICT DO NOTHING
+        ",
+        &[&post_id, &name_slices],
+    )
+    .await
+    .unwrap();
+}
+
+// Function to create post, if tags are Some function 'insert_tags_and_link_post' is used
+// Returns post_id so for getting post entity use 'get_post' after creating
+pub async fn create_post(
+    user_id: &String,
+    content: &String,
+    flags: &Vec<String>,
+    tags: Option<Vec<String>>, // Easier when it's not a reference
+    file_context_id: &Option<String>,
+    tx: &mut Transaction<'_>,
+) -> String {
+    let post_id = generate_id().to_string();
+    tx.execute(
+        "
+        INSERT INTO posts
+        (post_id, user_id, content, flags, file_context_id)
+
+        VALUES ($1, $2, $3, $4, $5)
+        ",
+        &[&post_id, user_id, content, flags, file_context_id],
+    )
+    .await
+    .unwrap();
+
+    if let Some(tags) = tags {
+        insert_tags_and_link_post(&post_id, tags, tx).await;
+    }
+    post_id
 }
