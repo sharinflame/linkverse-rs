@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS users (
-    user_id TEXT PRIMARY KEY,
+    user_id BIGINT PRIMARY KEY,
     username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
@@ -13,22 +13,22 @@ CREATE TABLE IF NOT EXISTS users (
 
 
 CREATE TABLE IF NOT EXISTS user_notifications (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
+    id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
     type TEXT NOT NULL,
     message TEXT,
-    from_id TEXT NOT NULL,
+    from_id BIGINT NOT NULL,
     linked_type TEXT,
-    linked_id TEXT,
-    second_linked_id TEXT,
+    linked_id BIGINT,
+    second_linked_id BIGINT,
     unread BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (from_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS auth_keys (
-    session_id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
+    session_id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
     token_secret TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS auth_keys (
 );
 
 CREATE TABLE IF NOT EXISTS files (
-    context_id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
+    context_id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
     objects TEXT[] NOT NULL,
     reference_count INT NOT NULL DEFAULT 0,
     allowed_count INT NOT NULL DEFAULT 1,
@@ -47,8 +47,8 @@ CREATE TABLE IF NOT EXISTS files (
 );
 
 CREATE TABLE IF NOT EXISTS posts (
-    post_id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
+    post_id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS posts (
     comments_count BIGINT DEFAULT 0,
     popularity_score BIGINT GENERATED ALWAYS AS (likes_count - dislikes_count + (comments_count * 0.25)) STORED,
     flags TEXT[],
-    file_context_id TEXT,
+    file_context_id BIGINT,
     status VARCHAR(20) DEFAULT 'active',
     is_deleted BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
@@ -66,8 +66,8 @@ CREATE TABLE IF NOT EXISTS posts (
 );
 
 CREATE TABLE IF NOT EXISTS user_post_views (
-    user_id TEXT NOT NULL,
-    post_id TEXT NOT NULL,
+    user_id BIGINT NOT NULL,
+    post_id BIGINT NOT NULL,
     timestamp TIMESTAMPTZ DEFAULT NOW(),
     PRIMARY KEY (user_id, post_id),
     FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
@@ -75,10 +75,10 @@ CREATE TABLE IF NOT EXISTS user_post_views (
 );
 
 CREATE TABLE IF NOT EXISTS comments (
-    comment_id TEXT PRIMARY KEY,
-    parent_comment_id TEXT,
-    post_id TEXT NOT NULL,
-    user_id TEXT,
+    comment_id BIGINT PRIMARY KEY,
+    parent_comment_id BIGINT,
+    post_id BIGINT NOT NULL,
+    user_id BIGINT,
     content TEXT,
     likes_count BIGINT DEFAULT 0,
     dislikes_count BIGINT DEFAULT 0,
@@ -91,9 +91,9 @@ CREATE TABLE IF NOT EXISTS comments (
 );
 
 CREATE TABLE IF NOT EXISTS reactions (
-    post_id TEXT NOT NULL,
-    comment_id TEXT,
-    user_id TEXT NOT NULL,
+    post_id BIGINT NOT NULL,
+    comment_id BIGINT,
+    user_id BIGINT NOT NULL,
     is_like BOOLEAN NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (post_id, comment_id, user_id),
@@ -103,9 +103,9 @@ CREATE TABLE IF NOT EXISTS reactions (
 );
 
 CREATE TABLE IF NOT EXISTS favorites (
-    user_id TEXT NOT NULL,
-    post_id TEXT NOT NULL,
-    comment_id TEXT,
+    user_id BIGINT NOT NULL,
+    post_id BIGINT NOT NULL,
+    comment_id BIGINT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (post_id, comment_id, user_id),
     FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS favorites (
 );
 
 CREATE TABLE IF NOT EXISTS followed (
-    user_id TEXT NOT NULL,
+    user_id BIGINT NOT NULL,
     followed_to TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (user_id, followed_to),
@@ -123,10 +123,10 @@ CREATE TABLE IF NOT EXISTS followed (
 );
 
 CREATE TABLE IF NOT EXISTS user_profiles (
-    user_id TEXT PRIMARY KEY,
+    user_id BIGINT PRIMARY KEY,
     display_name TEXT,
-    banner_context_id TEXT,
-    avatar_context_id TEXT,
+    banner_context_id BIGINT,
+    avatar_context_id BIGINT,
     bio TEXT,
     languages TEXT[],
     badges SMALLINT[],
@@ -137,22 +137,22 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 );
 
 CREATE TABLE IF NOT EXISTS tags (
-    tag_id TEXT PRIMARY KEY,
+    tag_id BIGINT PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     posts_count BIGINT DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS post_tags (
-    post_id TEXT NOT NULL REFERENCES posts(post_id) ON DELETE CASCADE,
-    tag_id TEXT NOT NULL REFERENCES tags(tag_id) ON DELETE CASCADE,
+    post_id BIGINT NOT NULL REFERENCES posts(post_id) ON DELETE CASCADE,
+    tag_id BIGINT NOT NULL REFERENCES tags(tag_id) ON DELETE CASCADE,
     PRIMARY KEY (post_id, tag_id)
 );
 
 CREATE TABLE IF NOT EXISTS reports (
-    report_id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    target_id TEXT NOT NULL,
+    report_id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    target_id BIGINT NOT NULL,
     target_type TEXT NOT NULL
         CHECK (target_type IN ('post', 'comment', 'user', 'message')),
     reason TEXT NOT NULL,
@@ -163,10 +163,10 @@ CREATE TABLE IF NOT EXISTS reports (
 );
 
 CREATE TABLE IF NOT EXISTS push_subscriptions (
-    id TEXT PRIMARY KEY,
+    id BIGINT PRIMARY KEY,
     type TEXT NOT NULL,
-    user_id TEXT NOT NULL,
-    session_id TEXT NOT NULL,
+    user_id BIGINT NOT NULL,
+    session_id BIGINT NOT NULL,
     expiration_time TIMESTAMPTZ,
     raw JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
@@ -177,23 +177,23 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 );
 
 CREATE TABLE IF NOT EXISTS mod_audit (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
+    id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
     towards_to TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     metadata JSONB,
     old_content JSONB,
     target_type TEXT NOT NULL,
-    target_id TEXT NOT NULL,
+    target_id BIGINT NOT NULL,
     action_type TEXT NOT NULL,
     reason TEXT NOT NULL,
-    role_id TEXT NOT NULL,
+    role_id SMALLINT NOT NULL,
     appellation_status TEXT NOT NULL DEFAULT 'none'
         CHECK (appellation_status IN ('none', 'pending', 'rejected', 'approved'))
 );
 
 CREATE TABLE IF NOT EXISTS mod_assigned_resources (
-    resource_id TEXT NOT NULL,
+    resource_id BIGINT NOT NULL,
     resource_type TEXT NOT NULL
         CHECK (resource_type IN ('post', 'comment', 'user', 'message', 'appellation')),
     assigned_to TEXT NOT NULL,
@@ -203,7 +203,7 @@ CREATE TABLE IF NOT EXISTS mod_assigned_resources (
 );
 
 CREATE TABLE IF NOT EXISTS channels (
-    channel_id TEXT PRIMARY KEY,
+    channel_id BIGINT PRIMARY KEY,
     metadata JSONB,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     type TEXT NOT NULL
@@ -211,14 +211,14 @@ CREATE TABLE IF NOT EXISTS channels (
 );
 
 CREATE TABLE IF NOT EXISTS messages (
-    message_id TEXT PRIMARY KEY,
-    channel_id TEXT NOT NULL,
-    user_id TEXT NOT NULL,
+    message_id BIGINT PRIMARY KEY,
+    channel_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
     content TEXT NOT NULL,
     content_type TEXT NOT NULL
         CHECK (content_type IN ('plain', 'encrypted'))
         DEFAULT 'plain',
-    file_context_id TEXT,
+    file_context_id BIGINT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     edited_at TIMESTAMPTZ,
     FOREIGN KEY (channel_id) REFERENCES channels(channel_id) ON DELETE CASCADE,
@@ -227,9 +227,9 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 
 CREATE TABLE IF NOT EXISTS channel_members (
-    membership_id TEXT PRIMARY KEY,
-    channel_id TEXT NOT NULL,
-    user_id TEXT NOT NULL,
+    membership_id BIGINT PRIMARY KEY,
+    channel_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
     joined_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (channel_id, user_id),
     FOREIGN KEY (channel_id) REFERENCES channels(channel_id) ON DELETE CASCADE,
@@ -237,10 +237,10 @@ CREATE TABLE IF NOT EXISTS channel_members (
 );
 
 CREATE TABLE IF NOT EXISTS user_channels (
-    user_id TEXT NOT NULL,
-    channel_id TEXT NOT NULL,
-    membership_id TEXT PRIMARY KEY,
-    last_read_message_id TEXT,
+    user_id BIGINT NOT NULL,
+    channel_id BIGINT NOT NULL,
+    membership_id BIGINT PRIMARY KEY,
+    last_read_message_id BIGINT,
     last_read_at TIMESTAMPTZ,
     UNIQUE (user_id, channel_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
@@ -250,8 +250,8 @@ CREATE TABLE IF NOT EXISTS user_channels (
 );
 
 CREATE TABLE IF NOT EXISTS friends (
-    user_id TEXT NOT NULL,
-    friend_id TEXT NOT NULL,
+    user_id BIGINT NOT NULL,
+    friend_id BIGINT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, friend_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
@@ -259,9 +259,9 @@ CREATE TABLE IF NOT EXISTS friends (
 );
 
 CREATE TABLE IF NOT EXISTS friend_requests (
-    request_id TEXT PRIMARY KEY,
-    from_user_id TEXT NOT NULL,
-    to_user_id TEXT NOT NULL,
+    request_id BIGINT PRIMARY KEY,
+    from_user_id BIGINT NOT NULL,
+    to_user_id BIGINT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (from_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (to_user_id) REFERENCES users(user_id) ON DELETE CASCADE
