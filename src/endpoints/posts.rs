@@ -5,8 +5,8 @@ use axum::{
     routing::{get, post},
 };
 use serde::Deserialize;
+use serde_with::{DisplayFromStr, serde_as};
 use validator::Validate;
-use serde_with::{serde_as, DisplayFromStr};
 
 use crate::{
     create_tx,
@@ -88,6 +88,8 @@ mod create_post {
     ) -> Result<ApiResponse<Post>, AppError> {
         let mut conn = get_conn!(state);
         let flags = payload.flags.unwrap_or_else(Vec::new);
+
+        // TODO: Check if context exists
 
         // Creating post
         let mut tx = create_tx!(conn);
