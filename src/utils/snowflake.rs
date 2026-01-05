@@ -54,7 +54,7 @@ impl SnowflakeGenerator {
         now.as_millis() as u64
     }
 
-    pub fn generate(&self) -> u64 {
+    pub fn generate(&self) -> i64 {
         let seq_mask = (1u64 << COUNTER_BITS) - 1;
         let out_ts: u64;
         let out_counter: u64;
@@ -96,10 +96,12 @@ impl SnowflakeGenerator {
             }
         }
 
-        (out_ts << (COUNTER_BITS + SID_BITS + PID_BITS))
+        let output_u64: u64 = (out_ts << (COUNTER_BITS + SID_BITS + PID_BITS))
             | ((self.worker_id & ((1 << PID_BITS) - 1)) << (COUNTER_BITS + SID_BITS))
             | (((self.server_id as u64) & ((1 << SID_BITS) - 1)) << COUNTER_BITS)
-            | (out_counter & ((1 << COUNTER_BITS) - 1))
+            | (out_counter & ((1 << COUNTER_BITS) - 1));
+
+        output_u64.try_into().unwrap()
     }
 
     pub fn parse(id: u64) -> (f64, u8, u8, u16) {
@@ -109,4 +111,9 @@ impl SnowflakeGenerator {
         let counter = (id & ((1 << COUNTER_BITS) - 1)) as u16;
         (ts as f64 / 1000.0, sid, pid, counter)
     }
+}
+
+/// Function to get when id was created in UNIX timestamp
+pub fn created_at(id: i64) -> f64 {
+    SnowflakeGenerator::parse(id.try_into().unwrap()).0
 }

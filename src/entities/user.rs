@@ -15,12 +15,6 @@ pub struct AuthUser {
     pub pending_email_until: Option<i64>,
 }
 
-impl AuthUser {
-    pub fn created_at(&self) -> f64 {
-        SnowflakeGenerator::parse(self.user_id.parse().expect("Wrong ID type")).0
-    }
-}
-
 /// Struct for giving to frontend
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug)]
@@ -37,10 +31,4 @@ pub struct User {
     pub bio: Option<String>,
     pub badges: Option<Vec<i16>>,
     pub languages: Option<Vec<String>>,
-}
-
-impl User {
-    pub fn created_at(&self) -> f64 {
-        SnowflakeGenerator::parse(self.user_id.parse().expect("Wrong ID type")).0
-    }
 }

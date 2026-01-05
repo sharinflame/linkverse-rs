@@ -17,7 +17,10 @@ mod me {
 
     use crate::{
         database::users::get_user,
-        utils::perms::{permissions_to_list, role_permissions},
+        utils::{
+            perms::{permissions_to_list, role_permissions},
+            snowflake::created_at,
+        },
     };
 
     use super::*;
@@ -45,7 +48,7 @@ mod me {
 
         Ok(response(
             Returns {
-                created_at: user.created_at(),
+                created_at: created_at(user.user_id.parse().unwrap()),
                 user,
                 permissions,
             },
@@ -129,7 +132,7 @@ mod patch_me {
 mod get_user {
     use axum::extract::Path;
 
-    use crate::database::users::get_user;
+    use crate::{database::users::get_user, utils::snowflake::created_at};
 
     use super::*;
 
@@ -152,7 +155,7 @@ mod get_user {
 
         Ok(response(
             Returns {
-                created_at: user.created_at(),
+                created_at: created_at(user.user_id.parse().unwrap()),
                 user,
             },
             StatusCode::OK,

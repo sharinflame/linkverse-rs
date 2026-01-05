@@ -40,6 +40,6 @@ where
     })
 }
 
-pub fn generate_id() -> u64 {
+pub fn generate_id() -> i64 {
     thread_state(|st| st.snowflake.generate())
 }
