@@ -4,7 +4,6 @@ use serde_with::skip_serializing_none;
 use crate::{
     database::{conn::LazyConn, posts::get_post, users::get_min_user},
     entities::{post::Post, user::User},
-    utils::state::ArcAppState,
 };
 
 /// Completed post that is shown to user
@@ -38,10 +37,9 @@ pub async fn get_full_post_by_id(
     post_id: &String,
     for_user_id: &String,
     conn: &mut LazyConn,
-    state: &ArcAppState,
     include_deleted: bool,
 ) -> Option<ForUserPostView> {
-    let post = get_post(post_id, conn, state, include_deleted).await?;
+    let post = get_post(post_id, conn, include_deleted).await?;
 
     Some(get_full_post(post, for_user_id, conn).await)
 }

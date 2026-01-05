@@ -2,7 +2,7 @@ use std::{any, sync::Arc, time::Duration};
 
 use crate::utils::{
     response::{AppError, FuncError},
-    state::AppState,
+    state::{AppState, CONFIG},
 };
 use axum::{Router, body::Body, http::StatusCode, response::IntoResponse, routing::get};
 use dotenvy::dotenv;
@@ -72,9 +72,9 @@ async fn main() {
             .layer(CatchPanicLayer::custom(panic_handler)),
     );
 
-    let listener = tokio::net::TcpListener::bind(shared_state.config.url.clone())
+    let listener = tokio::net::TcpListener::bind(CONFIG.url.clone())
         .await
         .unwrap();
-    info!("Listening on {:?}", shared_state.config.url);
+    info!("Listening on {:?}", CONFIG.url);
     axum::serve(listener, router).await.unwrap();
 }

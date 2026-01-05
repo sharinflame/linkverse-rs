@@ -9,6 +9,8 @@ use serde::Serialize;
 use sha2::Sha256;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::utils::state::CONFIG;
+
 type HmacSha256 = Hmac<Sha256>;
 
 pub fn b64_encode(data: &[u8]) -> String {
@@ -94,7 +96,6 @@ pub async fn generate_token(
     long_term: bool,
     secret: &str,
     session_id: &str,
-    signature_key: &str,
 ) -> String {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -114,7 +115,7 @@ pub async fn generate_token(
 
     let payload = b64_encode(&combined.as_bytes());
 
-    let signature = hmac_sha256_b64(&payload, signature_key);
+    let signature = hmac_sha256_b64(&payload, &CONFIG.signature_key);
 
     let token = format!("LV {}.{}", payload, signature);
     token
@@ -123,7 +124,6 @@ pub async fn generate_token(
 pub fn decode_token(
     token: &str,
     verify_type: Option<&'static str>,
-    signature_key: &str,
 ) -> Result<DecodedToken, &'static str> {
     if !token.starts_with("LV ") {
         return Err("INVALID_TOKEN");
@@ -141,7 +141,7 @@ pub fn decode_token(
     let signature = parts_rev[0];
     let payload = parts_rev[1];
 
-    if !verify_hmac_b64(&payload, signature, signature_key) {
+    if !verify_hmac_b64(&payload, signature, &CONFIG.signature_key) {
         return Err("INVALID_SIGNATURE");
     }
 

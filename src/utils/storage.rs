@@ -4,7 +4,7 @@ use hmac::{Hmac, Mac};
 use serde::Serialize;
 use sha2::Sha256;
 
-use crate::utils::state::{ArcAppState, Config};
+use crate::utils::state::{CONFIG, Config};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -91,7 +91,7 @@ pub fn generate_signed_token(
 }
 
 /// Builds link to get object in CDN, should be used only to get an object
-pub fn build_get_link(object: &str, expires_days: i64, state: &ArcAppState) -> String {
+pub fn build_get_link(object: &str, expires_days: i64) -> String {
     let full_path = format!("{}/{}", PUBLIC_PATH, object);
 
     if object.starts_with("public/") {
@@ -107,22 +107,22 @@ pub fn build_get_link(object: &str, expires_days: i64, state: &ArcAppState) -> S
     let payload_b64 = general_purpose::URL_SAFE_NO_PAD.encode(expires_timestamp.to_string());
     let signature_payload = format!("{}|{}", object, expires_timestamp);
     let signature = general_purpose::URL_SAFE_NO_PAD.encode(sign(
-        state.config.cdn_secret_key.as_bytes(),
+        CONFIG.cdn_secret_key.as_bytes(),
         signature_payload.as_bytes(),
     ));
 
     let token = format!(
         "lv.{}.{}.{}",
-        state.config.cdn_secret_key_n, payload_b64, signature
+        CONFIG.cdn_secret_key_n, payload_b64, signature
     );
 
     format!("{}?token={}", full_path, token)
 }
 
-pub fn build_links(from: Vec<String>, state: &ArcAppState) -> Vec<String> {
+pub fn build_links(from: Vec<String>) -> Vec<String> {
     let mut new: Vec<String> = Vec::new();
     for link in from {
-        new.push(build_get_link(&link, 3, state));
+        new.push(build_get_link(&link, 3));
     };
     new
 }

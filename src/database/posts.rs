@@ -6,9 +6,7 @@ use tokio_postgres::Row;
 use crate::{
     database::conn::LazyConn,
     entities::post::Post,
-    utils::{
-        format::normalize_tag, state::ArcAppState, storage::build_links, thread_state::generate_id,
-    },
+    utils::{format::normalize_tag, storage::build_links, thread_state::generate_id},
 };
 
 pub static POST_SQL: &str = "
@@ -36,7 +34,7 @@ pub static POST_SQL: &str = "
 
 /// Private function to get Post entity from Row
 /// Row needs to have all the non-option fields of Post
-fn row_to_post(row: Row, state: &ArcAppState) -> Post {
+fn row_to_post(row: Row) -> Post {
     Post {
         post_id: row.get("post_id"),
         user_id: row.get("user_id"),
@@ -47,7 +45,7 @@ fn row_to_post(row: Row, state: &ArcAppState) -> Post {
         dislikes_count: row.get("dislikes_count"),
         comments_count: row.get("comments_count"),
         flags: row.get("flags"),
-        media: build_links(row.get("media"), state),
+        media: build_links(row.get("media")),
         media_type: row.get("media_type"),
         status: row.try_get("status").ok().flatten(),
         is_deleted: row.try_get("is_deleted").ok().flatten(),
@@ -60,7 +58,6 @@ fn row_to_post(row: Row, state: &ArcAppState) -> Post {
 pub async fn get_post(
     post_id: &String,
     conn: &mut LazyConn,
-    state: &ArcAppState,
     include_deleted: bool,
 ) -> Option<Post> {
     let db = conn.get_client().await.unwrap();
@@ -68,7 +65,7 @@ pub async fn get_post(
         .query_opt(POST_SQL, &[&post_id, &include_deleted])
         .await
         .unwrap();
-    row.map(|r| row_to_post(r, state))
+    row.map(row_to_post)
 }
 
 /// Functions that automatically creates tags and inserts them to post

@@ -3,7 +3,6 @@ use crate::{
     entities::user::AuthUser,
     utils::{
         security::{generate_key, generate_token, store_password_async},
-        state::ArcAppState,
         thread_state::generate_id,
     },
 };
@@ -63,33 +62,13 @@ pub async fn get_auth_user_by_email(email: &String, conn: &mut LazyConn) -> Opti
 }
 
 /// Creates refresh and access tokens for user_id
-pub async fn create_tokens(
-    user_id: String,
-    tx: &mut Transaction<'_>,
-    state: ArcAppState,
-) -> Tokens {
+pub async fn create_tokens(user_id: String, tx: &mut Transaction<'_>) -> Tokens {
     let new_secret = generate_key(16);
     let new_session_id = generate_id().to_string();
 
-    let refresh = generate_token(
-        &user_id,
-        "refresh",
-        true,
-        &new_secret,
-        &new_session_id,
-        &state.config.signature_key,
-    )
-    .await;
+    let refresh = generate_token(&user_id, "refresh", true, &new_secret, &new_session_id).await;
 
-    let access = generate_token(
-        &user_id,
-        "access",
-        false,
-        &new_secret,
-        &new_session_id,
-        &state.config.signature_key,
-    )
-    .await;
+    let access = generate_token(&user_id, "access", false, &new_secret, &new_session_id).await;
 
     tx.execute(
         "
@@ -109,29 +88,12 @@ pub async fn update_tokens(
     user_id: String,
     session_id: String,
     tx: &mut Transaction<'_>,
-    state: ArcAppState,
 ) -> Tokens {
     let new_secret = generate_key(16);
 
-    let refresh = generate_token(
-        &user_id,
-        "refresh",
-        true,
-        &new_secret,
-        &session_id,
-        &state.config.signature_key,
-    )
-    .await;
+    let refresh = generate_token(&user_id, "refresh", true, &new_secret, &session_id).await;
 
-    let access = generate_token(
-        &user_id,
-        "access",
-        false,
-        &new_secret,
-        &session_id,
-        &state.config.signature_key,
-    )
-    .await;
+    let access = generate_token(&user_id, "access", false, &new_secret, &session_id).await;
 
     tx.execute(
         "

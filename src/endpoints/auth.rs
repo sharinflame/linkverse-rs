@@ -57,7 +57,7 @@ mod login {
 
         // Generating tokens
         let mut tx = create_tx!(conn);
-        let tokens = create_tokens(user.user_id, &mut tx, state).await;
+        let tokens = create_tokens(user.user_id, &mut tx).await;
         tx.commit().await.unwrap();
 
         return Ok(response(tokens, StatusCode::OK));
@@ -104,7 +104,7 @@ mod register {
         let mut tx = create_tx!(conn);
         let user_id =
             create_user(&payload.username, &payload.email, payload.password, &mut tx).await;
-        let tokens = create_tokens(user_id, &mut tx, state).await;
+        let tokens = create_tokens(user_id, &mut tx).await;
         tx.commit().await.unwrap();
 
         Ok(response(tokens, StatusCode::OK))
@@ -185,12 +185,8 @@ mod refresh {
         ValidatedJson(payload): ValidatedJson<Payload>,
     ) -> Result<ApiResponse<Tokens>, AppError> {
         // Decode token
-        let decoded = decode_token(
-            &payload.refresh_token,
-            Some("refresh"),
-            &state.config.signature_key,
-        )
-        .map_err(|e| AppError::Unauthorized(e))?;
+        let decoded = decode_token(&payload.refresh_token, Some("refresh"))
+            .map_err(|e| AppError::Unauthorized(e))?;
 
         // Check if it's expired
         if decoded.is_expired {
@@ -212,7 +208,7 @@ mod refresh {
 
         // Create new tokens
         let mut tx = create_tx!(conn);
-        let tokens = update_tokens(decoded.user_id, decoded.session_id, &mut tx, state).await;
+        let tokens = update_tokens(decoded.user_id, decoded.session_id, &mut tx).await;
         tx.commit().await.unwrap();
 
         Ok(response(tokens, StatusCode::OK))

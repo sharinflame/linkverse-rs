@@ -33,7 +33,7 @@ mod get_post {
         Path(post_id): Path<String>,
     ) -> Result<ApiResponse<ForUserPostView>, AppError> {
         let mut conn = get_conn!(state);
-        let user = get_full_post_by_id(&post_id, &session.user_id, &mut conn, &state, false)
+        let user = get_full_post_by_id(&post_id, &session.user_id, &mut conn, false)
             .await
             .ok_or(FuncError::PostDoesNotExist)?;
 
@@ -100,7 +100,7 @@ mod create_post {
         tx.commit().await.unwrap();
 
         // Getting post after it's created
-        let post = get_post(&post_id, &mut conn, &state, false)
+        let post = get_post(&post_id, &mut conn, false)
             .await
             .expect("Post didn't exist right after creating");
 

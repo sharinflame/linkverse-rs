@@ -1,10 +1,13 @@
 use deadpool_postgres::{Manager, ManagerConfig, Pool, RecyclingMethod};
 use fred::clients::Client as RedisClient;
 use fred::prelude::{self, ClientLike};
+use once_cell::sync::Lazy;
 use std::env;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio_postgres::{Config as PgConfig, NoTls};
+
+pub static CONFIG: Lazy<Config> = Lazy::new(|| Config::from_env());
 
 #[derive(Debug, Clone)]
 pub struct RedisConfig {
@@ -90,7 +93,6 @@ impl PostgresConfig {
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub db_pool: Arc<Pool>,
-    pub config: Arc<Config>,
 
     pub cache_redis: Arc<RedisClient>,
     pub sessions_redis: Arc<RedisClient>,
@@ -108,7 +110,6 @@ pub enum AppStateError {
 
 impl AppState {
     pub async fn create_from_env() -> Result<AppState, AppStateError> {
-        let config = Config::from_env();
         let postgres_config = PostgresConfig::from_env();
         let redis_config = RedisConfig::from_env();
 
@@ -144,7 +145,6 @@ impl AppState {
 
         Ok(AppState {
             db_pool: Arc::new(db_pool),
-            config: Arc::new(config),
             cache_redis: Arc::new(cache_redis),
             sessions_redis: Arc::new(sessions_redis),
             pubsub_redis: Arc::new(pubsub_redis),
