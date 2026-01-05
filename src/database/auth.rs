@@ -52,7 +52,7 @@ fn row_to_auth_user(row: Row) -> AuthUser {
 }
 
 /// Get auth user by user_id
-pub async fn get_auth_user(user_id: &String, conn: &mut LazyConn) -> Option<AuthUser> {
+pub async fn get_auth_user(user_id: &i64, conn: &mut LazyConn) -> Option<AuthUser> {
     get_user_by(conn, user_id, "user_id = $1").await
 }
 
@@ -62,9 +62,9 @@ pub async fn get_auth_user_by_email(email: &String, conn: &mut LazyConn) -> Opti
 }
 
 /// Creates refresh and access tokens for user_id
-pub async fn create_tokens(user_id: String, tx: &mut Transaction<'_>) -> Tokens {
+pub async fn create_tokens(user_id: i64, tx: &mut Transaction<'_>) -> Tokens {
     let new_secret = generate_key(16);
-    let new_session_id = generate_id().to_string();
+    let new_session_id = generate_id();
 
     let refresh = generate_token(&user_id, "refresh", true, &new_secret, &new_session_id).await;
 
@@ -84,11 +84,7 @@ pub async fn create_tokens(user_id: String, tx: &mut Transaction<'_>) -> Tokens 
 }
 
 /// Updates refresh and access tokens for session_id
-pub async fn update_tokens(
-    user_id: String,
-    session_id: String,
-    tx: &mut Transaction<'_>,
-) -> Tokens {
+pub async fn update_tokens(user_id: i64, session_id: i64, tx: &mut Transaction<'_>) -> Tokens {
     let new_secret = generate_key(16);
 
     let refresh = generate_token(&user_id, "refresh", true, &new_secret, &session_id).await;
@@ -152,8 +148,8 @@ pub async fn create_user(
     email: &String,
     password: String,
     tx: &mut Transaction<'_>,
-) -> String {
-    let new_user_id = generate_id().to_string();
+) -> i64 {
+    let new_user_id = generate_id();
     let password_hash = store_password_async(password).await;
     tx.execute(
         "
@@ -169,8 +165,8 @@ pub async fn create_user(
 
 /// Check user session secret
 pub async fn check_session_secret(
-    user_id: &String,
-    session_id: &String,
+    user_id: &i64,
+    session_id: &i64,
     secret: &String,
     conn: &mut LazyConn,
 ) -> bool {
@@ -193,7 +189,7 @@ pub async fn check_session_secret(
 }
 
 /// Deletes session
-pub async fn remove_session(session_id: &String, user_id: &String, tx: &mut Transaction<'_>) {
+pub async fn remove_session(session_id: &i64, user_id: &i64, tx: &mut Transaction<'_>) {
     tx.execute(
         "
         DELETE FROM auth_keys

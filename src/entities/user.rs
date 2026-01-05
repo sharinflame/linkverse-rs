@@ -1,12 +1,13 @@
-use crate::utils::snowflake::SnowflakeGenerator;
 use serde::{Deserialize, Serialize};
-use serde_with::skip_serializing_none;
+use serde_with::{DisplayFromStr, serde_as, skip_serializing_none};
 
+#[serde_as]
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AuthUser {
     pub username: String,
-    pub user_id: String,
+    #[serde_as(as = "DisplayFromStr")]
+    pub user_id: i64,
     pub email: String,
     #[serde(skip_serializing)]
     pub password_hash: Option<String>,
@@ -15,11 +16,12 @@ pub struct AuthUser {
     pub pending_email_until: Option<i64>,
 }
 
-/// Struct for giving to frontend
+#[serde_as]
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct User {
-    pub user_id: String,
+    #[serde_as(as = "DisplayFromStr")]
+    pub user_id: i64,
     pub username: String,
     #[serde(skip_serializing)]
     pub role_id: i32,

@@ -1,11 +1,14 @@
 use serde::Serialize;
-use serde_with::skip_serializing_none;
+use serde_with::{DisplayFromStr, serde_as, skip_serializing_none};
 
+#[serde_as]
 #[skip_serializing_none]
 #[derive(Serialize, Debug)]
 pub struct Post {
-    pub post_id: String,
-    pub user_id: String,
+    #[serde_as(as = "DisplayFromStr")]
+    pub post_id: i64,
+    #[serde_as(as = "DisplayFromStr")]
+    pub user_id: i64,
     pub content: String,
     pub created_at: i64,
     pub updated_at: i64,

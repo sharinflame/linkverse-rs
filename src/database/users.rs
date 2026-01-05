@@ -21,7 +21,7 @@ fn row_to_user(row: Row) -> User {
 }
 
 /// Get minimized user from database
-pub async fn get_min_user(user_id: &String, conn: &mut LazyConn) -> Option<User> {
+pub async fn get_min_user(user_id: &i64, conn: &mut LazyConn) -> Option<User> {
     let db = conn.get_client().await.unwrap();
     let sql = "
         SELECT u.user_id, u.username, p.display_name, u.role_id,
@@ -42,7 +42,7 @@ pub async fn get_min_user(user_id: &String, conn: &mut LazyConn) -> Option<User>
 }
 
 /// Get full user from database
-pub async fn get_user(user_id: &String, conn: &mut LazyConn) -> Option<User> {
+pub async fn get_user(user_id: &i64, conn: &mut LazyConn) -> Option<User> {
     let db = conn.get_client().await.unwrap();
     let sql = "
         SELECT u.user_id, u.username, p.display_name, u.role_id,
@@ -62,8 +62,8 @@ pub async fn get_user(user_id: &String, conn: &mut LazyConn) -> Option<User> {
 #[derive(Default, Debug)]
 pub struct UserProfileUpdate {
     pub display_name: Option<String>,
-    pub avatar_context_id: Option<String>,
-    pub banner_context_id: Option<String>,
+    pub avatar_context_id: Option<i64>,
+    pub banner_context_id: Option<i64>,
     pub bio: Option<String>,
     pub languages: Option<Vec<String>>,
 }
@@ -83,7 +83,7 @@ fn push_opt<'a, T: tokio_postgres::types::ToSql + Sync>(
 
 /// Updates user profile
 pub async fn update_user_profile(
-    user_id: &str,
+    user_id: &i64,
     update: UserProfileUpdate,
     tx: &mut Transaction<'_>,
 ) -> bool {

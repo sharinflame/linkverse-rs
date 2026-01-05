@@ -1,3 +1,0 @@
-Migration LinkVerse -> LinkVerse-rs:
-1. 'tags' in posts table is renamed to 'flags', 'ctags' is renamed to 'tags'
-2. 'webpush_subscriptions' renamed to 'push_subscriptions' and new field added: 'type'

@@ -1,5 +1,6 @@
 use axum::{Router, extract::State, http::StatusCode, routing::get};
 use serde::Serialize;
+    use serde_with::{serde_as, DisplayFromStr};
 
 use crate::{
     create_tx,
@@ -48,7 +49,7 @@ mod me {
 
         Ok(response(
             Returns {
-                created_at: created_at(user.user_id.parse().unwrap()),
+                created_at: created_at(user.user_id),
                 user,
                 permissions,
             },
@@ -81,16 +82,23 @@ mod patch_me {
     }
 
     // Patch current user's profile
+    #[serde_as]
     #[derive(Debug, Deserialize, Validate)]
     pub struct Payload {
         #[validate(length(min = 0, max = 16))]
         pub display_name: Option<String>,
-        #[validate(length(min = 0, max = 32))]
-        pub avatar_context_id: Option<String>,
-        #[validate(length(min = 0, max = 32))]
-        pub banner_context_id: Option<String>,
+
+        #[serde_as(as = "Option<DisplayFromStr>")]
+        #[validate(range(min = 1))]
+        pub avatar_context_id: Option<i64>,
+
+        #[serde_as(as = "Option<DisplayFromStr>")]
+        #[validate(range(min = 1))]
+        pub banner_context_id: Option<i64>,
+
         #[validate(length(min = 0, max = 512))]
         pub bio: Option<String>,
+        
         #[validate(custom(function = "validate_languages"))]
         pub languages: Option<Vec<String>>,
     }
@@ -146,7 +154,7 @@ mod get_user {
     pub async fn handler(
         _session: AuthSession,
         State(state): State<ArcAppState>,
-        Path(user_id): Path<String>,
+        Path(user_id): Path<i64>,
     ) -> Result<ApiResponse<Returns>, AppError> {
         let mut conn = get_conn!(state);
         let user = get_user(&user_id, &mut conn)
@@ -155,7 +163,7 @@ mod get_user {
 
         Ok(response(
             Returns {
-                created_at: created_at(user.user_id.parse().unwrap()),
+                created_at: created_at(user.user_id),
                 user,
             },
             StatusCode::OK,

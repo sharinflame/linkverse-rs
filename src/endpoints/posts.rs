@@ -6,6 +6,7 @@ use axum::{
 };
 use serde::Deserialize;
 use validator::Validate;
+use serde_with::{serde_as, DisplayFromStr};
 
 use crate::{
     create_tx,
@@ -30,7 +31,7 @@ mod get_post {
     pub async fn handler(
         session: AuthSession,
         State(state): State<ArcAppState>,
-        Path(post_id): Path<String>,
+        Path(post_id): Path<i64>,
     ) -> Result<ApiResponse<ForUserPostView>, AppError> {
         let mut conn = get_conn!(state);
         let user = get_full_post_by_id(&post_id, &session.user_id, &mut conn, false)
@@ -63,6 +64,7 @@ mod create_post {
         Ok(())
     }
 
+    #[serde_as]
     #[derive(Debug, Deserialize, Validate)]
     pub struct Payload {
         #[validate(length(min = 0, max = 16384))]
@@ -74,8 +76,9 @@ mod create_post {
         #[validate(custom(function = "validate_flags_or_tags"))]
         tags: Option<Vec<String>>,
 
-        #[validate(length(min = 1, max = 32))]
-        file_context_id: Option<String>,
+        #[serde_as(as = "Option<DisplayFromStr>")]
+        #[validate(range(min = 1))]
+        file_context_id: Option<i64>,
     }
 
     pub async fn handler(

@@ -70,12 +70,12 @@ pub async fn check_password_async(stored: String, password: String) -> bool {
 
 #[derive(Debug, Serialize)]
 pub struct DecodedToken {
-    pub user_id: String,
+    pub user_id: i64,
     pub is_expired: bool,
     pub expiration_timestamp: u64,
     pub secret: String,
     pub key_type: String,
-    pub session_id: String,
+    pub session_id: i64,
 }
 
 fn hmac_sha256_b64(message: &str, signature_key: &str) -> String {
@@ -91,11 +91,11 @@ fn verify_hmac_b64(message: &str, sig_b64: &str, signature_key: &str) -> bool {
 }
 
 pub async fn generate_token(
-    user_id: &str,
+    user_id: &i64,
     key_type: &str,
     long_term: bool,
     secret: &str,
-    session_id: &str,
+    session_id: &i64,
 ) -> String {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -188,11 +188,11 @@ pub fn decode_token(
     let is_expired = now > expiration_ts;
 
     Ok(DecodedToken {
-        user_id: user_id,
+        user_id: user_id.parse().unwrap(),
         is_expired: is_expired,
         expiration_timestamp: expiration_ts,
         secret: secret,
-        session_id: session_id,
+        session_id: session_id.parse().unwrap(),
         key_type: key_type,
     })
 }

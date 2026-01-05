@@ -15,8 +15,8 @@ use crate::{
 
 #[derive(Debug)]
 pub struct AuthSession {
-    pub user_id: String,
-    pub session_id: String,
+    pub user_id: i64,
+    pub session_id: i64,
 }
 
 impl FromRequestParts<ArcAppState> for AuthSession {

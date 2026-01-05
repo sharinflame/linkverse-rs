@@ -19,7 +19,7 @@ pub struct ForUserPostView {
 
 pub async fn get_full_post(
     post: Post,
-    for_user_id: &String,
+    for_user_id: &i64,
     conn: &mut LazyConn,
 ) -> ForUserPostView {
     let user = get_min_user(&post.user_id, conn).await;
@@ -34,8 +34,8 @@ pub async fn get_full_post(
 }
 
 pub async fn get_full_post_by_id(
-    post_id: &String,
-    for_user_id: &String,
+    post_id: &i64,
+    for_user_id: &i64,
     conn: &mut LazyConn,
     include_deleted: bool,
 ) -> Option<ForUserPostView> {

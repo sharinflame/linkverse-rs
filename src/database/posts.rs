@@ -55,11 +55,7 @@ fn row_to_post(row: Row) -> Post {
 
 /// Get single post by id from database
 /// Returns: Post entity without 'is_deleted' and 'status' fields
-pub async fn get_post(
-    post_id: &String,
-    conn: &mut LazyConn,
-    include_deleted: bool,
-) -> Option<Post> {
+pub async fn get_post(post_id: &i64, conn: &mut LazyConn, include_deleted: bool) -> Option<Post> {
     let db = conn.get_client().await.unwrap();
     let row = db
         .query_opt(POST_SQL, &[&post_id, &include_deleted])
@@ -72,7 +68,7 @@ pub async fn get_post(
 /// Tags are normalized and duplicates are deleted before tags are inserted
 /// Doesn't return anything, touches two tables "tags" and "post_tags" in database
 pub async fn insert_tags_and_link_post(
-    post_id: &str,
+    post_id: &i64,
     raw_tags: Vec<String>,
     tx: &mut Transaction<'_>,
 ) {
@@ -94,21 +90,18 @@ pub async fn insert_tags_and_link_post(
         return;
     }
 
-    let ids: Vec<String> = (0..names.len())
-        .map(|_| generate_id().to_string())
-        .collect();
+    let ids: Vec<i64> = (0..names.len()).map(|_| generate_id()).collect();
 
     let name_slices: Vec<&str> = names.iter().map(|s| s.as_str()).collect();
-    let id_slices: Vec<&str> = ids.iter().map(|s| s.as_str()).collect();
 
     tx.execute(
         "
         INSERT INTO tags (name, tag_id)
         SELECT u.name, u.id
-        FROM unnest($1::text[], $2::text[]) AS u(name, id)
+        FROM unnest($1::text[], $2::bigint[]) AS u(name, id)
         ON CONFLICT (name) DO NOTHING
         ",
-        &[&name_slices, &id_slices],
+        &[&name_slices, &ids],
     )
     .await
     .unwrap();
@@ -116,7 +109,7 @@ pub async fn insert_tags_and_link_post(
     tx.execute(
         "
         INSERT INTO post_tags (post_id, tag_id)
-        SELECT $1::text, t.tag_id
+        SELECT $1, t.tag_id
         FROM tags t
         WHERE t.name = ANY($2::text[])
         ON CONFLICT DO NOTHING
@@ -130,14 +123,14 @@ pub async fn insert_tags_and_link_post(
 // Function to create post, if tags are Some function 'insert_tags_and_link_post' is used
 // Returns post_id so for getting post entity use 'get_post' after creating
 pub async fn create_post(
-    user_id: &String,
+    user_id: &i64,
     content: &String,
     flags: &Vec<String>,
     tags: Option<Vec<String>>, // Easier when it's not a reference
-    file_context_id: &Option<String>,
+    file_context_id: &Option<i64>,
     tx: &mut Transaction<'_>,
-) -> String {
-    let post_id = generate_id().to_string();
+) -> i64 {
+    let post_id = generate_id();
     tx.execute(
         "
         INSERT INTO posts
