@@ -115,5 +115,9 @@ impl SnowflakeGenerator {
 
 /// Function to get when id was created in UNIX timestamp
 pub fn created_at(id: i64) -> f64 {
-    SnowflakeGenerator::parse(id.try_into().unwrap()).0
+    if id < 0 {
+        return 0.0;
+    }
+    // Safely convert to u64; negative ids are treated as invalid and return 0.0
+    SnowflakeGenerator::parse(id as u64).0
 }

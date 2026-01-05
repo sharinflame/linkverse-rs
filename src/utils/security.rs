@@ -187,12 +187,22 @@ pub fn decode_token(
 
     let is_expired = now > expiration_ts;
 
+    let user_id_parsed = match user_id.parse::<i64>() {
+        Ok(v) => v,
+        Err(_) => return Err("DECODE_ERROR"),
+    };
+
+    let session_id_parsed = match session_id.parse::<i64>() {
+        Ok(v) => v,
+        Err(_) => return Err("DECODE_ERROR"),
+    };
+
     Ok(DecodedToken {
-        user_id: user_id.parse().unwrap(),
+        user_id: user_id_parsed,
         is_expired: is_expired,
         expiration_timestamp: expiration_ts,
         secret: secret,
-        session_id: session_id.parse().unwrap(),
+        session_id: session_id_parsed,
         key_type: key_type,
     })
 }
