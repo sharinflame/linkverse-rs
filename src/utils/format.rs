@@ -1,4 +1,5 @@
 use regex::Regex;
+use serde::{Deserialize, Deserializer};
 use unicode_normalization::UnicodeNormalization;
 
 pub fn normalize_tag(tag: &str) -> String {
@@ -12,4 +13,15 @@ pub fn normalize_tag(tag: &str) -> String {
     let tag = re_spaces.replace_all(&tag, "-");
 
     tag.chars().take(50).collect()
+}
+
+/// Parses String into Vec<i64>, useful in params
+pub fn parse_numbers<'de, D>(deserializer: D) -> Result<Vec<i64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: String = Deserialize::deserialize(deserializer)?;
+    s.split(',')
+        .map(|num| num.trim().parse::<i64>().map_err(serde::de::Error::custom))
+        .collect()
 }
