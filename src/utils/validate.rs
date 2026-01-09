@@ -2,7 +2,7 @@ use crate::utils::response::{AppError, FuncError};
 
 use axum::{
     Json,
-    extract::{FromRequest, Request},
+    extract::{FromRequest, Query, Request},
 };
 use regex::Regex;
 use serde::de::DeserializeOwned;
@@ -25,6 +25,26 @@ where
         payload.validate().map_err(|_| FuncError::IncorrectData)?;
 
         Ok(ValidatedJson(payload))
+    }
+}
+
+pub struct ValidatedQuery<T>(pub T);
+
+impl<B, T> FromRequest<B> for ValidatedQuery<T>
+where
+    B: Send + Sync + 'static,
+    T: DeserializeOwned + Validate,
+{
+    type Rejection = AppError;
+
+    async fn from_request(req: Request, _state: &B) -> Result<Self, Self::Rejection> {
+        let Query(payload) = Query::<T>::from_request(req, _state)
+            .await
+            .map_err(|_| FuncError::IncorrectData)?;
+
+        payload.validate().map_err(|_| FuncError::IncorrectData)?;
+
+        Ok(ValidatedQuery(payload))
     }
 }
 

@@ -15,7 +15,7 @@ use crate::{
         response::{ApiResponse, AppError, FuncError, response},
         security::check_password_async,
         state::ArcAppState,
-        validate::{ValidatedJson, validate_username},
+        validate::{ValidatedJson, ValidatedQuery, validate_username},
     },
 };
 
@@ -112,12 +112,10 @@ mod register {
 }
 
 mod check {
-    use axum::extract::Query;
-
     use super::*;
     use crate::database::auth::{email_exists, username_exists};
 
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Deserialize, Validate)]
     pub struct Params {
         r#type: String,
         value: String,
@@ -125,7 +123,7 @@ mod check {
 
     pub async fn handler(
         State(state): State<ArcAppState>,
-        Query(params): Query<Params>,
+        ValidatedQuery(params): ValidatedQuery<Params>,
     ) -> Result<StatusCode, AppError> {
         let mut conn = get_conn!(state);
 
