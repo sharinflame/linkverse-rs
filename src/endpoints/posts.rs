@@ -23,8 +23,13 @@ use crate::{
 
 mod get_post {
     use axum::extract::Path;
+    use serde::Serialize;
+    use serde_with::skip_serializing_none;
 
-    use crate::views::for_user::{ForUserPostView, get_full_post_by_id};
+    use crate::{
+        utils::{format::parse_numbers, validate::ValidatedQuery},
+        views::for_user::{ForUserPostView, get_full_post_by_id},
+    };
 
     use super::*;
 
@@ -34,11 +39,64 @@ mod get_post {
         Path(post_id): Path<i64>,
     ) -> Result<ApiResponse<ForUserPostView>, AppError> {
         let mut conn = get_conn!(state);
-        let user = get_full_post_by_id(&post_id, &session.user_id, &mut conn, false)
+        let post = get_full_post_by_id(&post_id, &session.user_id, &mut conn, false)
             .await
             .ok_or(FuncError::PostDoesNotExist)?;
 
-        Ok(response(user, StatusCode::OK))
+        Ok(response(post, StatusCode::OK))
+    }
+
+    #[derive(Debug, Deserialize, Validate)]
+    pub struct BatchParams {
+        #[serde(deserialize_with = "parse_numbers")]
+        posts: Vec<i64>,
+    }
+
+    #[serde_as]
+    #[derive(Debug, Serialize)]
+    pub struct BatchError {
+        #[serde_as(as = "DisplayFromStr")]
+        pub post: i64,
+        pub error: &'static str,
+    }
+
+    #[derive(Debug, Serialize)]
+    #[skip_serializing_none]
+    pub struct BatchReturns {
+        pub posts: Vec<ForUserPostView>,
+        pub errors: Option<Vec<BatchError>>,
+    }
+
+    pub async fn batch(
+        session: AuthSession,
+        State(state): State<ArcAppState>,
+        ValidatedQuery(params): ValidatedQuery<BatchParams>,
+    ) -> Result<ApiResponse<BatchReturns>, AppError> {
+        let mut conn = get_conn!(state);
+        let mut posts: Vec<ForUserPostView> = Vec::with_capacity(params.posts.len());
+        let mut errors: Option<Vec<BatchError>> = None;
+
+        for post_id in params.posts {
+            let post = get_full_post_by_id(&post_id, &session.user_id, &mut conn, false).await;
+            if let Some(post) = post {
+                posts.push(post);
+            } else {
+                errors.get_or_insert_with(Vec::new).push(BatchError {
+                    post: post_id,
+                    error: "POST_DOES_NOT_EXIST",
+                });
+            }
+        }
+
+        if posts.is_empty() {
+            return Ok(ApiResponse::err(
+                Some(BatchReturns { posts, errors }),
+                "BATCH_FAILED",
+                StatusCode::BAD_REQUEST,
+            ));
+        }
+
+        Ok(response(BatchReturns { posts, errors }, StatusCode::OK))
     }
 }
 
@@ -116,5 +174,6 @@ mod create_post {
 pub fn router() -> Router<ArcAppState> {
     Router::new()
         .route("/{post_id}", get(get_post::handler))
+        .route("/batch", get(get_post::batch))
         .route("/", post(create_post::handler))
 }
