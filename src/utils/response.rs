@@ -72,6 +72,7 @@ pub enum FuncError {
     UserNotFound,
     IncorrectPassword,
     IncorrectData,
+    IncorrectParams,
     UserAlreadyExists,
     UsernameExists,
     InternalServerError,
@@ -94,6 +95,7 @@ impl From<FuncError> for AppError {
             FuncError::ExpiredToken => AppError::Unauthorized("EXPIRED_TOKEN"),
             FuncError::InvalidToken => AppError::Unauthorized("INVALID_TOKEN"),
             FuncError::PostDoesNotExist => AppError::NotFound("POST_DOES_NOT_EXIST"),
+            FuncError::IncorrectParams => AppError::BadRequest("INCORRECT_PARAMS"),
         }
     }
 }
