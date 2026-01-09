@@ -27,6 +27,15 @@ impl<T> ApiResponse<T> {
         };
         Self { data, status }
     }
+
+    pub fn err(data: Option<T>, error: &'static str, status: StatusCode) -> Self {
+        let data = ApiResponseData {
+            success: false,
+            data,
+            error: Some(error),
+        };
+        Self { data, status }
+    }
 }
 
 impl<T: Serialize> IntoResponse for ApiResponse<T> {
@@ -80,6 +89,7 @@ pub enum FuncError {
     ExpiredToken,
     InvalidToken,
     PostDoesNotExist,
+    NoMorePosts
 }
 
 impl From<FuncError> for AppError {
@@ -96,6 +106,7 @@ impl From<FuncError> for AppError {
             FuncError::InvalidToken => AppError::Unauthorized("INVALID_TOKEN"),
             FuncError::PostDoesNotExist => AppError::NotFound("POST_DOES_NOT_EXIST"),
             FuncError::IncorrectParams => AppError::BadRequest("INCORRECT_PARAMS"),
+            FuncError::NoMorePosts => AppError::BadRequest("NO_MORE_POSTS")
         }
     }
 }
