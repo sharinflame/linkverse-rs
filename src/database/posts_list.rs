@@ -115,7 +115,7 @@ pub async fn get_posts(
 
     sql += match mode {
         PostsMode::Popular => " ORDER BY popularity_score DESC, post_id DESC LIMIT $1",
-        (PostsMode::New | PostsMode::ByFollowing) => " ORDER BY post_id DESC LIMIT $1",
+        PostsMode::New | PostsMode::ByFollowing => " ORDER BY post_id DESC LIMIT $1",
     };
 
     let client = conn.get_client().await.unwrap();
@@ -128,7 +128,7 @@ pub async fn get_posts(
                 let post_id: i64 = r.get("post_id");
                 Some(format!("{},{}", popularity, post_id))
             }
-            (PostsMode::New | PostsMode::ByFollowing) => {
+            PostsMode::New | PostsMode::ByFollowing => {
                 let post_id: i64 = r.get("post_id");
                 Some(post_id.to_string())
             }
