@@ -145,7 +145,10 @@ mod patch_me {
 mod get_user {
     use axum::extract::Path;
 
-    use crate::{database::users::get_user, utils::snowflake::created_at};
+    use crate::{
+        database::users::{get_user, is_followed},
+        utils::snowflake::created_at,
+    };
 
     use super::*;
 
@@ -154,10 +157,11 @@ mod get_user {
         #[serde(flatten)]
         pub user: User,
         pub created_at: f64,
+        pub followed: bool,
     }
 
     pub async fn handler(
-        _session: AuthSession,
+        session: AuthSession,
         State(state): State<ArcAppState>,
         Path(user_id): Path<i64>,
     ) -> Result<ApiResponse<Returns>, AppError> {
@@ -165,10 +169,12 @@ mod get_user {
         let user = get_user(&user_id, &mut conn)
             .await
             .ok_or(FuncError::UserNotFound)?;
+        let followed = is_followed(&session.user_id, &user_id, &mut conn).await;
 
         Ok(response(
             Returns {
                 created_at: created_at(user.user_id),
+                followed,
                 user,
             },
             StatusCode::OK,
