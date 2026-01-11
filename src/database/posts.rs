@@ -148,3 +148,18 @@ pub async fn create_post(
     }
     post_id
 }
+
+/// Add posts to table 'user_post_views' for user
+pub async fn mark_posts_as_viewed(user_id: &i64, posts_ids: &[i64], tx: &mut Transaction<'_>) {
+    tx.execute(
+        "
+        INSERT INTO user_post_views (user_id, post_id)
+        SELECT $1, u.post_id
+        FROM unnest($2::bigint[]) AS u(post_id)
+        ON CONFLICT (user_id, post_id) DO NOTHING
+        ",
+        &[user_id, &posts_ids],
+    )
+    .await
+    .unwrap();
+}

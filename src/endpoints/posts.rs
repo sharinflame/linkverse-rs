@@ -101,7 +101,6 @@ mod get_post {
 }
 
 mod create_post {
-
     use validator::ValidationError;
 
     use crate::database::posts::{create_post, get_post};
@@ -171,9 +170,38 @@ mod create_post {
     }
 }
 
+mod view_posts {
+    use crate::database::posts::mark_posts_as_viewed;
+
+    use super::*;
+
+    #[serde_as]
+    #[derive(Debug, Deserialize, Validate)]
+    pub struct Payload {
+        #[serde_as(as = "Vec<DisplayFromStr>")]
+        #[validate(length(min = 1, max = 50))]
+        posts: Vec<i64>,
+    }
+
+    pub async fn handler(
+        session: AuthSession,
+        State(state): State<ArcAppState>,
+        ValidatedJson(payload): ValidatedJson<Payload>,
+    ) -> Result<StatusCode, AppError> {
+        let mut conn = get_conn!(state);
+
+        let mut tx = create_tx!(conn);
+        mark_posts_as_viewed(&session.user_id, &payload.posts, &mut tx).await;
+        tx.commit().await.unwrap();
+
+        return Ok(StatusCode::NO_CONTENT);
+    }
+}
+
 pub fn router() -> Router<ArcAppState> {
     Router::new()
         .route("/{post_id}", get(get_post::handler))
         .route("/batch", get(get_post::batch))
         .route("/", post(create_post::handler))
+        .route("/view", post(view_posts::handler))
 }
