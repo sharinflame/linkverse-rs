@@ -142,3 +142,51 @@ pub async fn update_user_profile(
     tx.execute(query.as_str(), &params).await.unwrap();
     true
 }
+
+/// Follow user
+/// 'user_id' is user that will start following 'target_id'
+/// If user was already followed, nothing happens
+pub async fn follow_user(user_id: &i64, target_id: &i64, tx: &mut Transaction<'_>) {
+    tx.execute(
+        "
+        INSERT INTO followed (user_id, followed_to)
+        VALUES ($1, $2)
+        ON CONFLICT (user_id, followed_to) DO NOTHING
+        ",
+        &[user_id, target_id],
+    )
+    .await
+    .unwrap();
+}
+
+/// Unfollow user
+/// 'user_id' is user that will stop following 'target_id'
+/// If user wasn't followed, nothing happens
+pub async fn unfollow_user(user_id: &i64, target_id: &i64, tx: &mut Transaction<'_>) {
+    tx.execute(
+        "
+        DELETE FROM followed
+        WHERE user_id = $1 AND followed_to = $2
+        ",
+        &[user_id, target_id],
+    )
+    .await
+    .unwrap();
+}
+
+// Will return true if 'user_id' is following 'target_id'
+pub async fn is_followed(user_id: &i64, target_id: &i64, conn: &mut LazyConn) -> bool {
+    let db = conn.get_client().await.unwrap();
+    let value = db
+        .query_opt(
+            "
+            SELECT 1
+            FROM followed
+            WHERE user_id = $1 AND followed_to = $2
+            ",
+            &[user_id, target_id],
+        )
+        .await
+        .unwrap();
+    value.is_some()
+}

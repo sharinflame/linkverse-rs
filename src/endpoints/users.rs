@@ -1,6 +1,11 @@
-use axum::{Router, extract::State, http::StatusCode, routing::get};
+use axum::{
+    Router,
+    extract::State,
+    http::StatusCode,
+    routing::{get, post},
+};
 use serde::Serialize;
-    use serde_with::{serde_as, DisplayFromStr};
+use serde_with::{DisplayFromStr, serde_as};
 
 use crate::{
     create_tx,
@@ -98,7 +103,7 @@ mod patch_me {
 
         #[validate(length(min = 0, max = 512))]
         pub bio: Option<String>,
-        
+
         #[validate(custom(function = "validate_languages"))]
         pub languages: Option<Vec<String>>,
     }
@@ -171,8 +176,46 @@ mod get_user {
     }
 }
 
+mod following {
+    use axum::extract::Path;
+
+    use super::*;
+    use crate::{
+        database::users::{follow_user, unfollow_user},
+        extractors::auth::AuthSession,
+    };
+
+    pub async fn post_handler(
+        session: AuthSession,
+        State(state): State<ArcAppState>,
+        Path(user_id): Path<i64>,
+    ) -> Result<StatusCode, AppError> {
+        let mut conn = get_conn!(state);
+        let mut tx = create_tx!(conn);
+        follow_user(&session.user_id, &user_id, &mut tx).await;
+        tx.commit().await.unwrap();
+        Ok(StatusCode::NO_CONTENT)
+    }
+
+    pub async fn delete_handler(
+        session: AuthSession,
+        State(state): State<ArcAppState>,
+        Path(user_id): Path<i64>,
+    ) -> Result<StatusCode, AppError> {
+        let mut conn = get_conn!(state);
+        let mut tx = create_tx!(conn);
+        unfollow_user(&session.user_id, &user_id, &mut tx).await;
+        tx.commit().await.unwrap();
+        Ok(StatusCode::NO_CONTENT)
+    }
+}
+
 pub fn router() -> Router<ArcAppState> {
     Router::new()
         .route("/me", get(me::handler).patch(patch_me::handler))
+        .route(
+            "/me/following/{user_id}",
+            post(following::post_handler).delete(following::delete_handler),
+        )
         .route("/{user_id}", get(get_user::handler))
 }
