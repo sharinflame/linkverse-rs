@@ -4,7 +4,13 @@ use crate::utils::{
     response::{AppError, FuncError},
     state::{AppState, CONFIG},
 };
-use axum::{Router, body::Body, http::StatusCode, response::IntoResponse, routing::get};
+use axum::{
+    Router,
+    body::Body,
+    http::{HeaderName, StatusCode},
+    response::IntoResponse,
+    routing::get,
+};
 use dotenvy::dotenv;
 use tower_http::{
     catch_panic::CatchPanicLayer,
@@ -22,6 +28,17 @@ mod extractors;
 mod services;
 mod utils;
 mod views;
+
+const ALLOWED_HEADERS: [HeaderName; 8] = [
+    HeaderName::from_static("upgrade"),
+    HeaderName::from_static("connection"),
+    HeaderName::from_static("sec-websocket-key"),
+    HeaderName::from_static("sec-websocket-version"),
+    HeaderName::from_static("origin"),
+    HeaderName::from_static("sec-websocket-protocol"),
+    HeaderName::from_static("content-type"),
+    HeaderName::from_static("authorization"),
+];
 
 fn panic_handler(err: Box<dyn any::Any + Send + 'static>) -> Response<Body> {
     let msg = if let Some(s) = err.downcast_ref::<&str>() {
@@ -66,8 +83,8 @@ async fn main() {
                 CorsLayer::new()
                     .allow_origin(Any)
                     .allow_methods(Any)
-                    .allow_headers(Any)
-                    .max_age(Duration::from_secs(3600)),
+                    .allow_headers(ALLOWED_HEADERS)
+                    .max_age(Duration::from_secs(86400)),
             )
             .layer(CatchPanicLayer::custom(panic_handler)),
     );
