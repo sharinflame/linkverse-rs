@@ -23,13 +23,8 @@ use crate::{
 
 mod get_post {
     use axum::extract::Path;
-    use serde::Serialize;
-    use serde_with::skip_serializing_none;
 
-    use crate::{
-        utils::{format::parse_numbers, validate::ValidatedQuery},
-        views::for_user::{ForUserPostView, get_full_post_by_id},
-    };
+    use crate::views::for_user::{ForUserPostView, get_full_post_by_id};
 
     use super::*;
 
@@ -45,9 +40,21 @@ mod get_post {
 
         Ok(response(post, StatusCode::OK))
     }
+}
+
+mod batch_get_post {
+    use serde::Serialize;
+    use serde_with::skip_serializing_none;
+
+    use crate::{
+        utils::{format::parse_numbers, validate::ValidatedQuery},
+        views::for_user::{ForUserPostView, get_full_post_by_id},
+    };
+
+    use super::*;
 
     #[derive(Debug, Deserialize, Validate)]
-    pub struct BatchParams {
+    pub struct Params {
         #[serde(deserialize_with = "parse_numbers")]
         posts: Vec<i64>,
     }
@@ -62,16 +69,16 @@ mod get_post {
 
     #[derive(Debug, Serialize)]
     #[skip_serializing_none]
-    pub struct BatchReturns {
+    pub struct Returns {
         pub posts: Vec<ForUserPostView>,
         pub errors: Option<Vec<BatchError>>,
     }
 
-    pub async fn batch(
+    pub async fn handler(
         session: AuthSession,
         State(state): State<ArcAppState>,
-        ValidatedQuery(params): ValidatedQuery<BatchParams>,
-    ) -> Result<ApiResponse<BatchReturns>, AppError> {
+        ValidatedQuery(params): ValidatedQuery<Params>,
+    ) -> Result<ApiResponse<Returns>, AppError> {
         let mut conn = get_conn!(state);
         let mut posts: Vec<ForUserPostView> = Vec::with_capacity(params.posts.len());
         let mut errors: Option<Vec<BatchError>> = None;
@@ -90,13 +97,13 @@ mod get_post {
 
         if posts.is_empty() {
             return Ok(ApiResponse::err(
-                Some(BatchReturns { posts, errors }),
+                Some(Returns { posts, errors }),
                 "BATCH_FAILED",
                 StatusCode::BAD_REQUEST,
             ));
         }
 
-        Ok(response(BatchReturns { posts, errors }, StatusCode::OK))
+        Ok(response(Returns { posts, errors }, StatusCode::OK))
     }
 }
 
@@ -201,7 +208,7 @@ mod view_posts {
 pub fn router() -> Router<ArcAppState> {
     Router::new()
         .route("/{post_id}", get(get_post::handler))
-        .route("/batch", get(get_post::batch))
+        .route("/batch", get(batch_get_post::handler))
         .route("/", post(create_post::handler))
         .route("/view", post(view_posts::handler))
 }
