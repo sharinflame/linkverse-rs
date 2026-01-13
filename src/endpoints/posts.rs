@@ -208,7 +208,13 @@ mod view_posts {
 mod delete_post {
     use axum::extract::Path;
 
-    use crate::database::posts::{get_post, mark_post_as_deleted};
+    use crate::{
+        database::{
+            posts::{get_post, mark_post_as_deleted},
+            users::get_permissions,
+        },
+        utils::perms::Permission,
+    };
 
     use super::*;
 
@@ -223,7 +229,11 @@ mod delete_post {
             .ok_or(FuncError::PostDoesNotExist)?;
 
         if post.user_id != session.user_id {
-            // TODO: Add moderation deletion mode
+            let perms = get_permissions(&session.user_id, &mut conn).await;
+            if perms.contains(Permission::MODERATE_POSTS) {
+                // TODO: Finish moderation deletion
+                return Err(FuncError::NotImplemented.into());
+            }
             return Err(FuncError::Forbidden.into());
         }
 

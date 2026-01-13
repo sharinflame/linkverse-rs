@@ -53,6 +53,7 @@ pub enum AppError {
     Internal(&'static str),
     Forbidden(&'static str),
     Conflict(&'static str),
+    NotImplemented(&'static str),
 }
 
 impl IntoResponse for AppError {
@@ -64,6 +65,7 @@ impl IntoResponse for AppError {
             AppError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
             AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
             AppError::Conflict(msg) => (StatusCode::CONFLICT, msg),
+            AppError::NotImplemented(msg) => (StatusCode::NOT_IMPLEMENTED, msg),
         };
 
         let body = Json(ApiResponseData::<()> {
@@ -91,6 +93,7 @@ pub enum FuncError {
     PostDoesNotExist,
     NoMorePosts,
     Forbidden,
+    NotImplemented,
 }
 
 impl From<FuncError> for AppError {
@@ -109,6 +112,7 @@ impl From<FuncError> for AppError {
             FuncError::IncorrectParams => AppError::BadRequest("INCORRECT_PARAMS"),
             FuncError::NoMorePosts => AppError::BadRequest("NO_MORE_POSTS"),
             FuncError::Forbidden => AppError::Forbidden("FORBIDDEN"),
+            FuncError::NotImplemented => AppError::NotImplemented("NOT_IMPLEMENTED"),
         }
     }
 }
