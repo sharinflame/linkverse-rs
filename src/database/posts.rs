@@ -163,3 +163,18 @@ pub async fn mark_posts_as_viewed(user_id: &i64, posts_ids: &[i64], tx: &mut Tra
     .await
     .unwrap();
 }
+
+/// Sets 'is_deleted = True' for post by post_id
+/// Ignored if post doesn't exist or is already deleted
+pub async fn mark_post_as_deleted(post_id: &i64, tx: &mut Transaction<'_>) {
+    tx.execute(
+        "
+        UPDATE posts
+        SET is_deleted = TRUE
+        WHERE post_id = $1
+        ",
+        &[post_id],
+    )
+    .await
+    .unwrap();
+}

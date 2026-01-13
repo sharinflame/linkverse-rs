@@ -205,9 +205,42 @@ mod view_posts {
     }
 }
 
+mod delete_post {
+    use axum::extract::Path;
+
+    use crate::database::posts::{get_post, mark_post_as_deleted};
+
+    use super::*;
+
+    pub async fn handler(
+        session: AuthSession,
+        State(state): State<ArcAppState>,
+        Path(post_id): Path<i64>,
+    ) -> Result<StatusCode, AppError> {
+        let mut conn = get_conn!(state);
+        let post = get_post(&post_id, &mut conn, false)
+            .await
+            .ok_or(FuncError::PostDoesNotExist)?;
+
+        if post.user_id != session.user_id {
+            // TODO: Add moderation deletion mode
+            return Err(FuncError::Forbidden.into());
+        }
+
+        let mut tx = create_tx!(conn);
+        mark_post_as_deleted(&post_id, &mut tx).await;
+        tx.commit().await.unwrap();
+
+        Ok(StatusCode::NO_CONTENT)
+    }
+}
+
 pub fn router() -> Router<ArcAppState> {
     Router::new()
-        .route("/{post_id}", get(get_post::handler))
+        .route(
+            "/{post_id}",
+            get(get_post::handler).delete(delete_post::handler),
+        )
         .route("/batch", get(batch_get_post::handler))
         .route("/", post(create_post::handler))
         .route("/view", post(view_posts::handler))

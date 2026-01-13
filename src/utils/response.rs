@@ -89,7 +89,8 @@ pub enum FuncError {
     ExpiredToken,
     InvalidToken,
     PostDoesNotExist,
-    NoMorePosts
+    NoMorePosts,
+    Forbidden,
 }
 
 impl From<FuncError> for AppError {
@@ -106,7 +107,8 @@ impl From<FuncError> for AppError {
             FuncError::InvalidToken => AppError::Unauthorized("INVALID_TOKEN"),
             FuncError::PostDoesNotExist => AppError::NotFound("POST_DOES_NOT_EXIST"),
             FuncError::IncorrectParams => AppError::BadRequest("INCORRECT_PARAMS"),
-            FuncError::NoMorePosts => AppError::BadRequest("NO_MORE_POSTS")
+            FuncError::NoMorePosts => AppError::BadRequest("NO_MORE_POSTS"),
+            FuncError::Forbidden => AppError::Forbidden("FORBIDDEN"),
         }
     }
 }
