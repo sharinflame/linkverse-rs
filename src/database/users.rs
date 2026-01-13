@@ -1,7 +1,14 @@
 use deadpool_postgres::Transaction;
 use tokio_postgres::{Row, types::ToSql};
 
-use crate::{database::conn::LazyConn, entities::user::User, utils::storage::normalize_url};
+use crate::{
+    database::conn::LazyConn,
+    entities::user::User,
+    utils::{
+        perms::{Permission, role_permissions},
+        storage::normalize_url,
+    },
+};
 
 /// Private function for converting Row to User
 fn row_to_user(row: Row) -> User {
@@ -189,4 +196,28 @@ pub async fn is_followed(user_id: &i64, target_id: &i64, conn: &mut LazyConn) ->
         .await
         .unwrap();
     value.is_some()
+}
+
+/// Get Permission object for user
+pub async fn get_permissions(user_id: &i64, conn: &mut LazyConn) -> Permission {
+    let db = conn.get_client().await.unwrap();
+    let row = db
+        .query_opt(
+            "
+            SELECT role_id
+            FROM users
+            WHERE user_id = $1
+            ",
+            &[user_id],
+        )
+        .await
+        .unwrap();
+    let role_id: i32;
+    if let Some(row) = row {
+        role_id = row.get("role_id");
+    } else {
+        role_id = 0;
+    }
+
+    role_permissions(&role_id)
 }
