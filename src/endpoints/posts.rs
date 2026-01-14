@@ -173,7 +173,7 @@ mod create_post {
             .await
             .expect("Post didn't exist right after creating");
 
-        return Ok(response(post, StatusCode::OK));
+        return Ok(response(post, StatusCode::CREATED));
     }
 }
 
