@@ -204,10 +204,22 @@ ALTER TABLE messages
     ADD CONSTRAINT messages_user_id_fkey
     FOREIGN KEY (user_id) REFERENCES users(user_id);
 
--- 6. Commit everything
+-- 6. Update user channels (we don't have any data, right?)
+DROP TABLE IF EXISTS user_channels;
+
+ALTER TABLE channel_members
+ADD COLUMN IF NOT EXISTS last_read_message_id BIGINT,
+ADD COLUMN IF NOT EXISTS badge_counter SMALLINT DEFAULT 0;
+
+ALTER TABLE channel_members
+ADD CONSTRAINT fk_last_read_message
+FOREIGN KEY (last_read_message_id)
+REFERENCES messages(message_id);
+
+-- 7. Commit everything
 COMMIT;
 
--- 7. Reindex and analyze tables
+-- 8. Reindex and analyze tables
 DO $$
 DECLARE
     tbl text;

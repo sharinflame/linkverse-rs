@@ -231,22 +231,12 @@ CREATE TABLE IF NOT EXISTS channel_members (
     channel_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     joined_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    last_read_message_id BIGINT,
+    badge_counter SMALLINT DEFAULT 0,
     UNIQUE (channel_id, user_id),
+    FOREIGN KEY (last_read_message_id) REFERENCES messages(message_id),
     FOREIGN KEY (channel_id) REFERENCES channels(channel_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS user_channels (
-    user_id BIGINT NOT NULL,
-    channel_id BIGINT NOT NULL,
-    membership_id BIGINT PRIMARY KEY,
-    last_read_message_id BIGINT,
-    last_read_at TIMESTAMPTZ,
-    UNIQUE (user_id, channel_id),
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (channel_id) REFERENCES channels(channel_id) ON DELETE CASCADE,
-    FOREIGN KEY (last_read_message_id) REFERENCES messages(message_id) ON DELETE SET NULL,
-    FOREIGN KEY (membership_id) REFERENCES channel_members(membership_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS friends (
