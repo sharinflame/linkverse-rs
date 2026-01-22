@@ -178,10 +178,36 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 5. Commit everything
+-- 5. Change constraints
+ALTER TABLE user_notifications
+    DROP CONSTRAINT user_notifications_from_id_fkey,
+    ADD CONSTRAINT user_notifications_from_id_fkey
+    FOREIGN KEY (from_id) REFERENCES users(user_id);
+
+ALTER TABLE comments
+    DROP CONSTRAINT comments_user_id_fkey,
+    ADD CONSTRAINT comments_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES users(user_id);
+
+ALTER TABLE reactions
+    DROP CONSTRAINT reactions_user_id_fkey,
+    ADD CONSTRAINT reactions_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES users(user_id);
+
+ALTER TABLE favorites
+    DROP CONSTRAINT favorites_user_id_fkey,
+    ADD CONSTRAINT favorites_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES users(user_id);
+
+ALTER TABLE messages
+    DROP CONSTRAINT messages_user_id_fkey,
+    ADD CONSTRAINT messages_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES users(user_id);
+
+-- 6. Commit everything
 COMMIT;
 
--- 6. Reindex and analyze tables
+-- 7. Reindex and analyze tables
 DO $$
 DECLARE
     tbl text;

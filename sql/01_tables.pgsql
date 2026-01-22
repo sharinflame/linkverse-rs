@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS user_notifications (
     second_linked_id BIGINT,
     unread BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (from_id) REFERENCES users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (from_id) REFERENCES users(user_id)
 );
 
 CREATE TABLE IF NOT EXISTS auth_keys (
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS posts (
     file_context_id BIGINT,
     status VARCHAR(20) DEFAULT 'active',
     is_deleted BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (user_id),
     FOREIGN KEY (file_context_id) REFERENCES files(context_id)
 );
 
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS comments (
     popularity_score BIGINT GENERATED ALWAYS AS (likes_count - dislikes_count + (replies_count * 0.25)) STORED,
     type TEXT DEFAULT 'comment',
     FOREIGN KEY (parent_comment_id) REFERENCES comments (comment_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (user_id),
     FOREIGN KEY (post_id) REFERENCES posts (post_id) ON DELETE CASCADE
 );
 
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS reactions (
     is_like BOOLEAN NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (post_id, comment_id, user_id),
-    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users (user_id),
     FOREIGN KEY (post_id) REFERENCES posts (post_id) ON DELETE CASCADE,
     FOREIGN KEY (comment_id) REFERENCES comments (comment_id) ON DELETE CASCADE
 );
@@ -222,7 +222,7 @@ CREATE TABLE IF NOT EXISTS messages (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     edited_at TIMESTAMPTZ,
     FOREIGN KEY (channel_id) REFERENCES channels(channel_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (file_context_id) REFERENCES files(context_id) ON DELETE SET NULL
 );
 
