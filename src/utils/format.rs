@@ -1,5 +1,6 @@
 use regex::Regex;
 use serde::{Deserialize, Deserializer};
+use tokio_postgres::{Row, types::FromSqlOwned};
 use unicode_normalization::UnicodeNormalization;
 
 pub fn normalize_tag(tag: &str) -> String {
@@ -24,4 +25,19 @@ where
     s.split(',')
         .map(|num| num.trim().parse::<i64>().map_err(serde::de::Error::custom))
         .collect()
+}
+
+/// Flatten rows in database query result
+#[inline]
+pub fn flatten_rows<T>(from: Vec<Row>, key: &str) -> Vec<T>
+where
+    T: FromSqlOwned,
+{
+    let mut to: Vec<T> = Vec::new();
+
+    for row in from {
+        to.push(row.get(key));
+    }
+
+    to
 }

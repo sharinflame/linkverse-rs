@@ -1,8 +1,7 @@
 use serde::Serialize;
 use serde_with::{DisplayFromStr, serde_as};
-use tokio_postgres::{Row, types::FromSqlOwned};
 
-use crate::database::conn::LazyConn;
+use crate::{database::conn::LazyConn, utils::format::flatten_rows};
 
 #[serde_as]
 #[derive(Serialize)]
@@ -15,20 +14,6 @@ pub struct PostsList {
 fn parse_tuple(s: &str) -> Option<(i64, i64)> {
     let mut parts = s.split(',').map(|x| x.trim().parse::<i64>());
     Some((parts.next()?.ok()?, parts.next()?.ok()?))
-}
-
-#[inline]
-fn flatten_rows<T>(from: Vec<Row>, key: &str) -> Vec<T>
-where
-    T: FromSqlOwned,
-{
-    let mut to: Vec<T> = Vec::new();
-
-    for row in from {
-        to.push(row.get(key));
-    }
-
-    to
 }
 
 pub enum PostsMode {
