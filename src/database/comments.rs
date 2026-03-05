@@ -119,12 +119,12 @@ pub struct CommentsList {
 
 pub async fn get_comments(
     post_id: &i64,
-    cursor: Option<String>,
+    cursor: &Option<String>,
     user_id: &i64,
     conn: &mut LazyConn,
-    r#type: Option<String>,
-    parent_id: Option<i64>,
-    limit: i64,
+    r#type: &Option<String>,
+    parent_id: &Option<i64>,
+    limit: &i64,
 ) -> Result<CommentsList, &'static str> {
     let db = conn.get_client().await.unwrap();
 
@@ -146,8 +146,8 @@ pub async fn get_comments(
     let is_user: i64;
     let popularity_score: i64;
     let comment_id: i64;
-    let comment_parent_id: i64;
-    let comment_type: String;
+    let comment_parent_id: &i64;
+    let comment_type: &String;
 
     if let Some(cursor) = cursor {
         let (i_u, ps, ci) = parse_cursor(&cursor).ok_or("INCORRECT_CURSOR")?;
@@ -182,8 +182,8 @@ pub async fn get_comments(
         }
     }
 
-    if let Some(ref r#type) = r#type {
-        comment_type = r#type.clone();
+    if let Some(r#type) = r#type {
+        comment_type = r#type;
         sql += &format!(
             "
             AND type = ${}
@@ -193,12 +193,12 @@ pub async fn get_comments(
         params.push(&comment_type);
     }
 
-    if r#type.is_none() || r#type == Some("comment".to_string()) {
+    if r#type.is_none() || *r#type == Some("comment".to_string()) {
         sql += "
             ORDER BY is_user_comment DESC, popularity_score DESC,
                     comment_id::bigint DESC
         "
-    } else if r#type == Some("update".to_string()) {
+    } else if *r#type == Some("update".to_string()) {
         sql += "
             ORDER BY comment_id::bigint
         "
@@ -209,7 +209,7 @@ pub async fn get_comments(
     params.push(&temp_limit);
 
     let mut rows = db.query(&sql, &params).await.unwrap();
-    let has_more = rows.len() > limit as usize;
+    let has_more = rows.len() > limit.clone() as usize;
 
     if rows.len() > 0 {
         rows.remove(rows.len() - 1);

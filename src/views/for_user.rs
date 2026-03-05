@@ -26,6 +26,7 @@ pub struct ForUserCommentView {
     pub user: Option<User>,
     pub is_fav: Option<bool>,
     pub is_like: Option<bool>,
+    pub replies: Option<Vec<ForUserCommentView>>,
 }
 
 pub async fn get_full_post(post: Post, for_user_id: &i64, conn: &mut LazyConn) -> ForUserPostView {
@@ -64,6 +65,7 @@ pub async fn get_full_comment(
         user,
         is_fav,
         is_like,
+        replies: None,
     }
 }
 

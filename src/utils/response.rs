@@ -94,6 +94,7 @@ pub enum FuncError {
     NoMorePosts,
     Forbidden,
     NotImplemented,
+    CommentDoesNotExist,
 }
 
 impl From<FuncError> for AppError {
@@ -113,6 +114,7 @@ impl From<FuncError> for AppError {
             FuncError::NoMorePosts => AppError::BadRequest("NO_MORE_POSTS"),
             FuncError::Forbidden => AppError::Forbidden("FORBIDDEN"),
             FuncError::NotImplemented => AppError::NotImplemented("NOT_IMPLEMENTED"),
+            FuncError::CommentDoesNotExist => AppError::NotFound("COMMENT_DOES_NOT_EXIST"),
         }
     }
 }
