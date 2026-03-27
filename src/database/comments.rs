@@ -1,4 +1,8 @@
-use crate::{database::conn::LazyConn, entities::comment::Comment, utils::format::flatten_rows};
+use crate::{
+    database::conn::LazyConn,
+    entities::comment::Comment,
+    utils::{format::flatten_rows, thread_state::generate_id},
+};
 use deadpool_postgres::Transaction;
 use serde::Serialize;
 use serde_with::{DisplayFromStr, serde_as};
@@ -12,15 +16,16 @@ pub async fn create_comment(
     parent_comment_id: Option<i64>,
     tx: &mut Transaction<'_>,
 ) -> Comment {
+    let new_id = generate_id();
     let row = tx
         .query_one(
             "
-            INSERT INTO comments (post_id, user_id, content, parent_comment_id)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO comments (post_id, user_id, content, parent_comment_id, comment_id)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING comment_id, post_id, user_id, content, parent_comment_id, likes_count, dislikes_count, replies_count, type
             ",
             // I had to put type cause it was giving an error with "expected &i64, found &String"
-            &[&post_id, &user_id, &content, &parent_comment_id],
+            &[&post_id, &user_id, &content, &parent_comment_id, &new_id],
         )
         .await
         .unwrap();
@@ -134,6 +139,8 @@ pub async fn get_comments(
         WITH ranked_comments AS (
             SELECT comment_id,
                    popularity_score,
+                   parent_comment_id,
+                   type,
                    CASE WHEN user_id = $2 THEN 1 ELSE 0 END AS is_user_comment
             FROM comments
             WHERE post_id = $1
@@ -204,7 +211,7 @@ pub async fn get_comments(
         "
     }
 
-    sql += &format!("LIMIT {}", &(params.length().unwrap() + 1));
+    sql += &format!("LIMIT ${}", &(params.length().unwrap() + 1));
     let temp_limit = limit + 1;
     params.push(&temp_limit);
 
@@ -217,7 +224,7 @@ pub async fn get_comments(
 
     let mut next_cursor: Option<String> = None;
     if let Some(last_row) = rows.last() {
-        let is_user: i64 = last_row.get("is_user_comment");
+        let is_user: i32 = last_row.get("is_user_comment");
         let popularity: i64 = last_row.get("popularity_score");
         let comment_id: i64 = last_row.get("comment_id");
 
