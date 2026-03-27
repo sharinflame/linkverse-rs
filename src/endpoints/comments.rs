@@ -260,11 +260,11 @@ mod delete_comment {
 pub fn router() -> Router<ArcAppState> {
     Router::new()
         .route(
-            "/comments/{comment_id}",
+            "/v1/comments/{comment_id}",
             get(get_comment::handler).delete(delete_comment::handler),
         )
         .route(
-            "/posts/{post_id}/comments",
+            "/v1/posts/{post_id}/comments",
             post(create_comment::handler).get(get_comments::handler),
         )
 }

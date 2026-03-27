@@ -218,10 +218,10 @@ mod following {
 
 pub fn router() -> Router<ArcAppState> {
     Router::new()
-        .route("/me", get(me::handler).patch(patch_me::handler))
+        .route("/v1/users/me", get(me::handler).patch(patch_me::handler))
         .route(
-            "/me/following/{user_id}",
+            "/v1/users/me/following/{user_id}",
             post(following::post_handler).delete(following::delete_handler),
         )
-        .route("/{user_id}", get(get_user::handler))
+        .route("/v1/users/{user_id}", get(get_user::handler))
 }

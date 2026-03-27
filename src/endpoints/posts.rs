@@ -248,10 +248,10 @@ mod delete_post {
 pub fn router() -> Router<ArcAppState> {
     Router::new()
         .route(
-            "/{post_id}",
+            "/v1/posts/{post_id}",
             get(get_post::handler).delete(delete_post::handler),
         )
-        .route("/batch", get(batch_get_post::handler))
-        .route("/", post(create_post::handler))
-        .route("/view", post(view_posts::handler))
+        .route("/v1/posts/batch", get(batch_get_post::handler))
+        .route("/v1/posts", post(create_post::handler))
+        .route("/v1/posts/view", post(view_posts::handler))
 }

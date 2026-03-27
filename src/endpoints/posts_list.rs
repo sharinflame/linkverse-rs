@@ -114,7 +114,7 @@ mod new {
 
 pub fn router() -> Router<ArcAppState> {
     Router::new()
-        .route("/popular", get(popular::handler))
-        .route("/new", get(new::handler))
-        .route("/following", get(following::handler))
+        .route("/v1/posts/popular", get(popular::handler))
+        .route("/v1/posts/new", get(new::handler))
+        .route("/v1/posts/following", get(following::handler))
 }

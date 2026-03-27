@@ -74,20 +74,20 @@ async fn main() {
     };
     let shared_state = Arc::new(state);
 
-    let v1_router: Router<()> = endpoints::create_router()
-        .route("/ping", get(ping).post(ping))
-        .with_state(shared_state.clone());
-    let router = Router::new().nest("/v1", v1_router).layer(
-        tower::ServiceBuilder::new()
-            .layer(
-                CorsLayer::new()
-                    .allow_origin(Any)
-                    .allow_methods(Any)
-                    .allow_headers(ALLOWED_HEADERS)
-                    .max_age(Duration::from_secs(86400)),
-            )
-            .layer(CatchPanicLayer::custom(panic_handler)),
-    );
+    let router = endpoints::create_router()
+        .route("/v1/ping", get(ping).post(ping))
+        .with_state(shared_state.clone())
+        .layer(
+            tower::ServiceBuilder::new()
+                .layer(
+                    CorsLayer::new()
+                        .allow_origin(Any)
+                        .allow_methods(Any)
+                        .allow_headers(ALLOWED_HEADERS)
+                        .max_age(Duration::from_secs(86400)),
+                )
+                .layer(CatchPanicLayer::custom(panic_handler)),
+        );
 
     let listener = tokio::net::TcpListener::bind(CONFIG.url.clone())
         .await

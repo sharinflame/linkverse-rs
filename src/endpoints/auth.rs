@@ -237,10 +237,10 @@ mod logout {
 
 pub fn router() -> Router<ArcAppState> {
     Router::new()
-        .route("/login", post(login::handler))
-        .route("/register", post(register::handler))
-        .route("/check", get(check::handler))
-        .route("/me", get(me::handler))
-        .route("/refresh", post(refresh::handler))
-        .route("/logout", post(logout::handler))
+        .route("/v1/auth/login", post(login::handler))
+        .route("/v1/auth/register", post(register::handler))
+        .route("/v1/auth/check", get(check::handler))
+        .route("/v1/auth/me", get(me::handler))
+        .route("/v1/auth/refresh", post(refresh::handler))
+        .route("/v1/auth/logout", post(logout::handler))
 }

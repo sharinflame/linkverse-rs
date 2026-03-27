@@ -10,9 +10,9 @@ mod users;
 
 pub fn create_router() -> Router<ArcAppState> {
     Router::new()
-        .nest("/auth", auth::router())
-        .nest("/users", users::router())
-        .nest("/posts", posts::router())
-        .nest("/posts", posts_list::router())
-        .nest("/", comments::router())
+        .merge(auth::router())
+        .merge(users::router())
+        .merge(posts::router())
+        .merge(posts_list::router())
+        .merge(comments::router())
 }
