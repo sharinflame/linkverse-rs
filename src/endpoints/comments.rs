@@ -222,7 +222,7 @@ mod delete_comment {
 
     use crate::{
         database::{
-            comments::{get_comment, soft_delete_comment},
+            comments::{delete_comment, get_comment, soft_delete_comment},
             users::get_permissions,
         },
         utils::perms::Permission,
@@ -236,11 +236,11 @@ mod delete_comment {
         Path(comment_id): Path<i64>,
     ) -> Result<StatusCode, AppError> {
         let mut conn = get_conn!(state);
-        let post = get_comment(&comment_id, &mut conn)
+        let comment = get_comment(&comment_id, &mut conn)
             .await
             .ok_or(FuncError::CommentDoesNotExist)?;
 
-        if post.user_id != session.user_id {
+        if comment.user_id != session.user_id {
             let perms = get_permissions(&session.user_id, &mut conn).await;
             if perms.contains(Permission::MODERATE_COMMENTS) {
                 // TODO: Finish moderation deletion
@@ -250,7 +250,11 @@ mod delete_comment {
         }
 
         let mut tx = create_tx!(conn);
-        soft_delete_comment(&comment_id, &mut tx).await;
+        if comment.replies_count > 0 {
+            soft_delete_comment(&comment_id, &mut tx).await;
+        } else {
+            delete_comment(&comment_id, &mut tx).await;
+        }
         tx.commit().await.unwrap();
 
         Ok(StatusCode::NO_CONTENT)
