@@ -4,7 +4,7 @@ FOR EACH ROW
 WHEN (
     OLD.user_id IS DISTINCT FROM NEW.user_id OR
     OLD.content IS DISTINCT FROM NEW.content OR
-    OLD.tags IS DISTINCT FROM NEW.tags
+    OLD.flags IS DISTINCT FROM NEW.flags
 )
 EXECUTE FUNCTION update_modified_column();
 
