@@ -927,6 +927,7 @@ dependencies = [
  "hmac",
  "once_cell",
  "pbkdf2",
+ "percent-encoding",
  "rand 0.9.2",
  "regex",
  "serde",

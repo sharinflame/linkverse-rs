@@ -3,4 +3,5 @@ pub mod comments;
 pub mod conn;
 pub mod posts;
 pub mod posts_list;
+pub mod storage;
 pub mod users;

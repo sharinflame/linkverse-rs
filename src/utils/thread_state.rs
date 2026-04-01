@@ -6,7 +6,7 @@ use std::{env, thread_local};
 static THREAD_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 struct ThreadState {
-    worker_id: u64,
+    _worker_id: u64,
     snowflake: SnowflakeGenerator,
 }
 
@@ -24,7 +24,7 @@ where
             let id = THREAD_COUNTER.fetch_add(1, Ordering::Relaxed) as u64;
 
             *opt = Some(ThreadState {
-                worker_id: id,
+                _worker_id: id,
                 snowflake: SnowflakeGenerator::new(
                     env::var("SERVER_ID")
                         .unwrap_or("0".to_string())

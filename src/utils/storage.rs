@@ -4,11 +4,11 @@ use hmac::{Hmac, Mac};
 use serde::Serialize;
 use sha2::Sha256;
 
-use crate::utils::state::{CONFIG, Config};
+use crate::utils::state::CONFIG;
 
 type HmacSha256 = Hmac<Sha256>;
 
-const PUBLIC_PATH: &str = "https://storage.sharinflame.com";
+pub const PUBLIC_PATH: &str = "https://storage.sharinflame.com";
 
 #[derive(Debug)]
 pub enum Operation {
@@ -61,7 +61,6 @@ pub fn generate_signed_token(
     expires_seconds: u64,
     max_size: Option<u64>,
     r#type: Option<&str>,
-    config: Config,
 ) -> String {
     let expires_timestamp = Utc::now().timestamp() as f64 + expires_seconds as f64;
 
@@ -80,13 +79,13 @@ pub fn generate_signed_token(
     let payload_json = serde_json::to_vec(&payload).unwrap();
     let payload_b64 = general_purpose::STANDARD.encode(payload_json);
     let signature = general_purpose::STANDARD.encode(sign(
-        &config.cdn_secret_key.as_bytes(),
+        &CONFIG.cdn_secret_key.as_bytes(),
         payload_b64.as_bytes(),
     ));
 
     format!(
         "LV {}.{}.{}",
-        &config.cdn_secret_key_n, payload_b64, signature
+        &CONFIG.cdn_secret_key_n, payload_b64, signature
     )
 }
 
@@ -123,6 +122,6 @@ pub fn build_links(from: Vec<String>) -> Vec<String> {
     let mut new: Vec<String> = Vec::new();
     for link in from {
         new.push(build_get_link(&link, 3));
-    };
+    }
     new
 }

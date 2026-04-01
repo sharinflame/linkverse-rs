@@ -95,6 +95,7 @@ pub enum FuncError {
     Forbidden,
     NotImplemented,
     CommentDoesNotExist,
+    ContextNotFound,
 }
 
 impl From<FuncError> for AppError {
@@ -115,6 +116,7 @@ impl From<FuncError> for AppError {
             FuncError::Forbidden => AppError::Forbidden("FORBIDDEN"),
             FuncError::NotImplemented => AppError::NotImplemented("NOT_IMPLEMENTED"),
             FuncError::CommentDoesNotExist => AppError::NotFound("COMMENT_DOES_NOT_EXIST"),
+            FuncError::ContextNotFound => AppError::NotFound("CONTEXT_NOT_FOUND"),
         }
     }
 }

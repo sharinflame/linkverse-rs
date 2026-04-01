@@ -6,6 +6,7 @@ mod auth;
 mod comments;
 mod posts;
 mod posts_list;
+mod storage;
 mod users;
 
 pub fn create_router() -> Router<ArcAppState> {
@@ -15,4 +16,5 @@ pub fn create_router() -> Router<ArcAppState> {
         .merge(posts::router())
         .merge(posts_list::router())
         .merge(comments::router())
+        .merge(storage::router())
 }
