@@ -146,7 +146,7 @@ mod get_comments {
                 full_comment.replies = Some(
                     Box::pin(load_comments_with_replies(
                         post_id,
-                        &full_comment.comment.parent_commend_id,
+                        &Some(full_comment.comment.comment_id),
                         user_id,
                         conn,
                         depth + 1,
@@ -191,7 +191,7 @@ mod get_comments {
                 full_comment.replies = Some(
                     load_comments_with_replies(
                         &post_id,
-                        &full_comment.comment.parent_commend_id,
+                        &Some(full_comment.comment.comment_id),
                         &session.user_id,
                         &mut conn,
                         0,

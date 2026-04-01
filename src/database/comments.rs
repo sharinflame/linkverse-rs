@@ -218,8 +218,8 @@ pub async fn get_comments(
     let mut rows = db.query(&sql, &params).await.unwrap();
     let has_more = rows.len() > limit.clone() as usize;
 
-    if rows.len() > 0 {
-        rows.remove(rows.len() - 1);
+    if has_more {
+        rows.pop();
     }
 
     let mut next_cursor: Option<String> = None;
