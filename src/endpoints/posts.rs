@@ -80,7 +80,11 @@ mod batch_get_post {
         ValidatedQuery(params): ValidatedQuery<Params>,
     ) -> Result<ApiResponse<Returns>, AppError> {
         let mut conn = get_conn!(state);
-        let mut posts: Vec<ForUserPostView> = Vec::with_capacity(params.posts.len());
+        let size = params.posts.len();
+        if size > 15 {
+            return Err(FuncError::IncorrectData.into());
+        }
+        let mut posts: Vec<ForUserPostView> = Vec::with_capacity(size);
         let mut errors: Option<Vec<BatchError>> = None;
 
         for post_id in params.posts {
