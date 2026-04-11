@@ -114,7 +114,10 @@ mod batch_get_post {
 mod create_post {
     use validator::ValidationError;
 
-    use crate::database::posts::{create_post, get_post};
+    use crate::database::{
+        posts::{create_post, get_post},
+        storage::get_file_context,
+    };
 
     use super::*;
 
@@ -157,7 +160,11 @@ mod create_post {
         let mut conn = get_conn!(state);
         let flags = payload.flags.unwrap_or_else(Vec::new);
 
-        // TODO: Check if context exists
+        if let Some(context_id) = payload.file_context_id {
+            get_file_context(&context_id, &mut conn)
+                .await
+                .ok_or(FuncError::ContextNotFound)?;
+        }
 
         // Creating post
         let mut tx = create_tx!(conn);

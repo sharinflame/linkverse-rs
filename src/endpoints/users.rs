@@ -69,7 +69,10 @@ mod patch_me {
 
     use super::*;
     use crate::{
-        database::users::{UserProfileUpdate, update_user_profile},
+        database::{
+            storage::get_file_context,
+            users::{UserProfileUpdate, update_user_profile},
+        },
         map_struct,
         utils::validate::ValidatedJson,
     };
@@ -111,16 +114,30 @@ mod patch_me {
     pub async fn handler(
         session: AuthSession,
         State(state): State<ArcAppState>,
-        ValidatedJson(payload): ValidatedJson<Payload>,
+        ValidatedJson(mut payload): ValidatedJson<Payload>,
     ) -> Result<StatusCode, AppError> {
         let mut conn = get_conn!(state);
-        let mut tx = create_tx!(conn);
 
         // We convert PatchPayload to UserProfileUpdate so we can validate
         // Validation has to be in endpoints/ not in database/ so we gotta do this here
         // That's my choice
         let mut dirty = false;
 
+        if let Some(context_id) = payload.banner_context_id {
+            let context = get_file_context(&context_id, &mut conn).await;
+            if context.is_none() {
+                payload.banner_context_id = None;
+            }
+        }
+
+        if let Some(context_id) = payload.avatar_context_id {
+            let context = get_file_context(&context_id, &mut conn).await;
+            if context.is_none() {
+                payload.avatar_context_id = None;
+            }
+        }
+
+        let mut tx = create_tx!(conn);
         dirty |= update_user_profile(
             &session.user_id,
             map_struct!(payload => UserProfileUpdate {
