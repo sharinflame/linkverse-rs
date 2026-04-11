@@ -40,9 +40,9 @@ where
     async fn from_request(req: Request, _state: &B) -> Result<Self, Self::Rejection> {
         let Query(payload) = Query::<T>::from_request(req, _state)
             .await
-            .map_err(|_| FuncError::IncorrectData)?;
+            .map_err(|_| FuncError::IncorrectParams)?;
 
-        payload.validate().map_err(|_| FuncError::IncorrectData)?;
+        payload.validate().map_err(|_| FuncError::IncorrectParams)?;
 
         Ok(ValidatedQuery(payload))
     }
