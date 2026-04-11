@@ -243,8 +243,8 @@ $$ LANGUAGE plpgsql;
     CREATE OR REPLACE FUNCTION file_refcount_trigger()
     RETURNS TRIGGER AS $$
     DECLARE
-        context_id_old TEXT;
-        context_id_new TEXT;
+        context_id_old BIGINT;
+        context_id_new BIGINT;
     BEGIN
         EXECUTE format('SELECT ($1).%I', TG_ARGV[0])
         USING OLD INTO context_id_old;
