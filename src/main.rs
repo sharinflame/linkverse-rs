@@ -1,11 +1,13 @@
 use std::{any, sync::Arc, time::Duration};
 
-use crate::utils::{
-    response::{AppError, FuncError},
-    state::{AppState, CONFIG},
+use crate::{
+    queues::file_cleanup::start_cleanup_loop,
+    utils::{
+        response::{AppError, FuncError},
+        state::{AppState, CONFIG},
+    },
 };
 use axum::{
-    Router,
     body::Body,
     http::{HeaderName, StatusCode},
     response::IntoResponse,
@@ -25,6 +27,7 @@ mod database;
 mod endpoints;
 mod entities;
 mod extractors;
+mod queues;
 mod services;
 mod utils;
 mod views;
@@ -73,6 +76,8 @@ async fn main() {
         }
     };
     let shared_state = Arc::new(state);
+
+    tokio::spawn(start_cleanup_loop(shared_state.clone()));
 
     let router = endpoints::create_router()
         .route("/v1/ping", get(ping).post(ping))

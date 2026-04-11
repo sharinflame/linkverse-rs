@@ -2,7 +2,9 @@ use deadpool_postgres::Transaction;
 use tokio_postgres::Row;
 
 use crate::{
-    database::conn::LazyConn, entities::context::FileContext, utils::thread_state::generate_id,
+    database::conn::LazyConn,
+    entities::context::FileContext,
+    utils::{state::CONFIG, thread_state::generate_id},
 };
 
 fn row_to_context(row: Row) -> FileContext {
@@ -76,6 +78,9 @@ pub async fn get_file_context(context_id: &i64, conn: &mut LazyConn) -> Option<F
     row.map(row_to_context)
 }
 
+/// Appends file to the file context
+/// If context not found will give error CONTEXT_NOT_FOUND
+/// If num of objects > max allowed for the context will give error MAX_COUNT_EXCEED
 pub async fn append_file(
     context_id: &i64,
     new_object: &String,
@@ -118,4 +123,58 @@ pub async fn append_file(
     .unwrap();
 
     Ok(())
+}
+
+pub async fn get_contexts_for_deletion(
+    use_server_id: bool,
+    limit: i32,
+    conn: &mut LazyConn,
+) -> Vec<FileContext> {
+    let client = conn.get_client().await.unwrap();
+
+    let rows: Vec<Row>;
+    if use_server_id {
+        rows = client
+            .query(
+                "
+                SELECT context_id, user_id, objects, reference_count, allowed_count,
+                       EXTRACT(EPOCH FROM created_at)::bigint as created_at, type
+                FROM files
+                WHERE reference_count = 0
+                    AND created_at < NOW() - INTERVAL '30 minutes'
+                    AND (context_id::bigint % $2) = $1  -- server
+                LIMIT $3
+                ",
+                &[
+                    &(CONFIG.server_id as i64),
+                    &(CONFIG.total_servers as i64),
+                    &(limit as i64),
+                ],
+            )
+            .await
+            .unwrap();
+    } else {
+        rows = client
+            .query(
+                "
+                SELECT context_id, user_id, objects, reference_count, allowed_count,
+                       EXTRACT(EPOCH FROM created_at)::bigint as created_at, type
+                FROM files
+                WHERE reference_count = 0
+                    AND created_at < NOW() - INTERVAL '30 minutes'
+                LIMIT $1
+                ",
+                &[&limit],
+            )
+            .await
+            .unwrap();
+    }
+
+    let mut contexts: Vec<FileContext> = Vec::new();
+
+    for row in rows {
+        contexts.push(row_to_context(row))
+    }
+
+    return contexts;
 }
