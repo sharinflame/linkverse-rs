@@ -11,6 +11,7 @@ type HmacSha256 = Hmac<Sha256>;
 pub const PUBLIC_PATH: &str = "https://storage.sharinflame.com";
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum Operation {
     PUT,
     DELETE,
